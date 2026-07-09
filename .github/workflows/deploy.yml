@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       AWS_REGION: ${{ secrets.AWS_REGION }}
-      ECR_REPOSITORY: nimble-frontend
+      ECR_REPOSITORY: nimble/nimble-frontend
     steps:
       - uses: actions/checkout@v4
         with:
