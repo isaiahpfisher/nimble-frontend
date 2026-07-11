@@ -2,15 +2,12 @@
 import { onMounted } from "vue";
 import { ref, toRaw } from "vue";
 import { useRouter } from "vue-router";
-import UserServices from "../services/UserServices.js";
+import UserServices from "../../services/UserServices.js";
+import SnackBar from "../../components/SnackBar.vue";
 
 const router = useRouter();
 const isCreateAccount = ref(false);
-const snackbar = ref({
-  value: false,
-  color: "",
-  text: "",
-});
+const snackbar = ref(null);
 const user = ref({
   firstName: "",
   lastName: "",
@@ -20,28 +17,17 @@ const user = ref({
 
 onMounted(async () => {
   localStorage.removeItem("user");
-  // if (localStorage.getItem("user") !== null) {
-  //   router.push({ name: "recipes" });
-  // }
 });
-
-function navigateToRecipes() {
-  router.push({ name: "recipes" });
-}
 
 async function createAccount() {
   await UserServices.addUser(user.value)
     .then(() => {
-      snackbar.value.value = true;
-      snackbar.value.color = "green";
-      snackbar.value.text = "Account created successfully!";
+      snackbar.value.show("Account created successfully!", "green");
       router.push({ name: "login" });
     })
     .catch((error) => {
       console.log(error);
-      snackbar.value.value = true;
-      snackbar.value.color = "error";
-      snackbar.value.text = error.message;
+      snackbar.value.show(error.message);
     });
 }
 
@@ -49,16 +35,12 @@ async function login() {
   await UserServices.loginUser(user)
     .then((data) => {
       window.localStorage.setItem("user", JSON.stringify(data.data));
-      snackbar.value.value = true;
-      snackbar.value.color = "green";
-      snackbar.value.text = "Login successful!";
-      router.push({ name: "recipes" });
+      snackbar.value.show("Login successful!", "green");
+      router.push({ name: "home" });
     })
     .catch((error) => {
       console.log(error);
-      snackbar.value.value = true;
-      snackbar.value.color = "error";
-      snackbar.value.text = error.message;
+      snackbar.value.show(error.message);
     });
 }
 
@@ -68,10 +50,6 @@ function openCreateAccount() {
 
 function closeCreateAccount() {
   isCreateAccount.value = false;
-}
-
-function closeSnackBar() {
-  snackbar.value.value = false;
 }
 </script>
 
@@ -101,19 +79,6 @@ function closeSnackBar() {
 
           <v-btn variant="flat" color="primary" @click="login()">Login</v-btn>
         </v-card-actions>
-      </v-card>
-
-      <v-card class="rounded-lg elevation-5 my-8">
-        <v-card-title class="text-center headline">
-          <v-btn
-            class="ml-2"
-            variant="flat"
-            color="secondary"
-            @click="navigateToRecipes()"
-          >
-            View Published Recipes
-          </v-btn>
-        </v-card-title>
       </v-card>
 
       <v-dialog persistent v-model="isCreateAccount" width="800">
@@ -159,19 +124,7 @@ function closeSnackBar() {
         </v-card>
       </v-dialog>
 
-      <v-snackbar v-model="snackbar.value" rounded="pill">
-        {{ snackbar.text }}
-
-        <template v-slot:actions>
-          <v-btn
-            :color="snackbar.color"
-            variant="text"
-            @click="closeSnackBar()"
-          >
-            Close
-          </v-btn>
-        </template>
-      </v-snackbar>
+      <SnackBar ref="snackbar" />
     </div>
   </v-container>
 </template>
