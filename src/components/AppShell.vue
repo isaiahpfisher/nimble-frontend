@@ -104,13 +104,14 @@ const userItems = ref([
   },
 ]);
 const adminItems = ref([
+  { title: "Projects", icon: "mdi-cube-outline", name: "adminProjects" },
   { title: "Users", icon: "mdi-account-group", name: "adminUsers" },
 ]);
 </script>
 
 <template>
   <v-app-bar color="primary" app dark>
-    <router-link :to="projectRoute">
+    <router-link :to="projectRoute()">
       <v-img class="mx-2" :src="ocLogo" height="50" width="50" contain></v-img>
     </router-link>
     <v-toolbar-title class="title">{{ title }}</v-toolbar-title>
@@ -146,7 +147,7 @@ const adminItems = ref([
           </v-list-item>
         </template>
         <v-list density="compact" nav>
-          <v-list-subheader>Projects</v-list-subheader>
+          <v-list-subheader>My Projects</v-list-subheader>
           <v-list-item
             v-for="project in projects"
             :key="project.id"

@@ -13,6 +13,9 @@ export default {
   createProject(project) {
     return apiClient.post("projects", project);
   },
+  createProjectAsAdmin(project) {
+    return apiClient.post("admin/projects", project);
+  },
   updateProject(id, project) {
     return apiClient.put(`projects/${id}`, project);
   },
