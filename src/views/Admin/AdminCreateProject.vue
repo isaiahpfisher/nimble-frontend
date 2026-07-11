@@ -36,7 +36,10 @@ async function createProject() {
     const newProject = await ProjectServices.createProjectAsAdmin(
       project.value,
     );
-    router.push({ name: "adminProjects" });
+    router.push({
+      name: "adminProjectGeneral",
+      params: { id: newProject.data.id },
+    });
   } catch (error) {
     console.error(error);
     snackbar.value.show(error.response?.data?.message ?? error.message);

@@ -93,10 +93,10 @@ async function getProjects() {
             color="primary"
             size="small"
             variant="text"
-            prepend-icon="mdi-pencil"
-            :to="{ name: 'adminEditUser', params: { id: item.id } }"
+            prepend-icon="mdi-cog"
+            :to="{ name: 'adminProjectGeneral', params: { id: item.id } }"
           >
-            Edit
+            Manage
           </v-btn>
         </template>
       </v-data-table>

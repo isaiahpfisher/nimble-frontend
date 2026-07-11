@@ -50,7 +50,7 @@ async function deleteProject() {
   try {
     const response = await ProjectServices.deleteProject(projectId.value);
     deleteDialog.value = false;
-    router.push({ name: "home" });
+    router.push(route.meta.admin ? { name: "adminProjects" } : { name: "home" });
   } catch (error) {
     console.error(error);
     snackbar.value.show(error.response?.data?.message ?? error.message);

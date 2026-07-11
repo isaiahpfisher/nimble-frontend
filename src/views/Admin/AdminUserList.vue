@@ -81,7 +81,7 @@ async function getUsers() {
             variant="tonal"
             label
           >
-            <v-icon start :icon="value ? 'mdi-shield-check' : 'mdi-account'" />
+            <v-icon start :icon="value ? 'mdi-shield-crown' : 'mdi-account'" />
             {{ value ? "Admin" : "User" }}
           </v-chip>
         </template>

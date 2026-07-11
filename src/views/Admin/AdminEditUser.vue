@@ -28,7 +28,7 @@ async function getUser(id) {
 
 async function updateUser() {
   try {
-    await UserServices.updateUser(user.value);
+    await UserServices.updateUser(user.value.id, user.value);
     snackbar.value.show("User updated successfully!", "green");
   } catch (error) {
     console.error(error);
