@@ -1,5 +1,15 @@
 import axios from "axios";
 
+const ISO_DATE_RE =
+  /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$/;
+
+function reviveDates(key, value) {
+  if (typeof value === "string" && ISO_DATE_RE.test(value)) {
+    return new Date(value);
+  }
+  return value;
+}
+
 var baseurl = "";
 if (process.env.NODE_ENV === "development") {
   baseurl = "http://localhost/nimbleapi/";
@@ -29,7 +39,7 @@ const apiClient = axios.create({
     return JSON.stringify(data);
   },
   transformResponse: function (data) {
-    data = JSON.parse(data);
+    data = JSON.parse(data, reviveDates);
     if (!data.success && data.code == "expired-session") {
       localStorage.removeItem("user");
     }

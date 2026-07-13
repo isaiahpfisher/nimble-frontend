@@ -4,6 +4,7 @@ import "vuetify/styles";
 
 // Vuetify
 import { createVuetify } from "vuetify";
+import { VDateInput } from "vuetify/labs/VDateInput";
 
 const OCTheme = {
   dark: false,
@@ -21,6 +22,9 @@ const OCTheme = {
 };
 
 export default createVuetify({
+  components: {
+    VDateInput,
+  },
   theme: {
     defaultTheme: "OCTheme",
     themes: {
