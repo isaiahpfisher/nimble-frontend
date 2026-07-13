@@ -147,7 +147,7 @@ const adminItems = ref([
       Back to Projects
     </v-btn>
     <v-btn
-      v-else
+      v-else-if="user !== null"
       class="mx-4"
       variant="flat"
       color="white"
