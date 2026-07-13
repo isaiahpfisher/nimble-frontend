@@ -93,8 +93,8 @@ async function getProjects() {
             color="primary"
             size="small"
             variant="text"
-            prepend-icon="mdi-pencil"
-            :to="{ name: 'adminEditUser', params: { id: item.id } }"
+            prepend-icon="mdi-eye"
+            :to="{ name: 'projectBoard', params: { id: item.id } }"
           >
             Manage
           </v-btn>

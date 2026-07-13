@@ -24,10 +24,6 @@ const initials = computed(() =>
 onMounted(async () => {
   user.value = JSON.parse(localStorage.getItem("user"));
 
-  if (route.params.id) {
-    localStorage.setItem("selectedProjectId", route.params.id);
-  }
-
   loadProjects();
   window.addEventListener("project-updated", loadProjects);
 });
@@ -49,8 +45,19 @@ function logout() {
 }
 
 // Project stuff
-const projects = ref([]);
+const projects = ref([]); // current user's projects
 const selectedProject = ref(null);
+
+const routeProjectId = computed(() => Number(route.params.id) || null);
+
+// An admin can open a project they don't belong to/
+// We need to check that to render things differently for admins.
+const isAdminViewing = computed(
+  () =>
+    routeProjectId.value != null &&
+    user.value?.isAdmin &&
+    !projects.value.some((p) => p.id === routeProjectId.value),
+);
 
 // inject projectId into route
 function projectRoute(name = "projectBoard") {
@@ -69,16 +76,27 @@ async function loadProjects() {
     return;
   }
 
-  const localStorageProjectId = Number(
-    localStorage.getItem("selectedProjectId"),
-  );
-  selectedProject.value =
-    projects.value.find((p) => p.id === localStorageProjectId) ??
-    projects.value[0] ??
-    null;
-
-  if (selectedProject.value) {
-    localStorage.setItem("selectedProjectId", selectedProject.value.id);
+  const myProject = projects.value.find((p) => p.id === routeProjectId.value);
+  // only update local storage if we're not an admin peeking at a project
+  if (myProject) {
+    selectedProject.value = myProject;
+    localStorage.setItem("selectedProjectId", myProject.id);
+  } else if (isAdminViewing.value) {
+    try {
+      const response = await ProjectServices.getProject(routeProjectId.value);
+      selectedProject.value = response.data;
+    } catch (error) {
+      console.log(error);
+      snackbar.value.show(error.message);
+    }
+  } else {
+    // No project in the route → restore the last selected member project.
+    const savedId = Number(localStorage.getItem("selectedProjectId"));
+    selectedProject.value =
+      projects.value.find((p) => p.id === savedId) ?? projects.value[0] ?? null;
+    if (selectedProject.value) {
+      localStorage.setItem("selectedProjectId", selectedProject.value.id);
+    }
   }
 }
 
@@ -115,8 +133,21 @@ const adminItems = ref([
       <v-img class="mx-2" :src="ocLogo" height="50" width="50" contain></v-img>
     </router-link>
     <v-toolbar-title class="title">{{ title }}</v-toolbar-title>
+
     <v-spacer></v-spacer>
+
     <v-btn
+      v-if="isAdminViewing"
+      class="mx-4"
+      variant="flat"
+      color="white"
+      prepend-icon="mdi-arrow-left"
+      :to="{ name: 'adminProjects' }"
+    >
+      Back to Projects
+    </v-btn>
+    <v-btn
+      v-else
       class="mx-4"
       variant="flat"
       color="white"
@@ -140,6 +171,17 @@ const adminItems = ref([
               </v-avatar>
               <div class="ml-3 text-body-2 font-weight-medium">
                 {{ selectedProject?.title ?? "Select a project" }}
+                <v-chip
+                  v-if="isAdminViewing"
+                  class="ml-1"
+                  size="x-small"
+                  color="warning"
+                  variant="flat"
+                  prepend-icon="mdi-shield-crown"
+                  label
+                >
+                  Admin
+                </v-chip>
               </div>
               <v-spacer></v-spacer>
               <v-icon icon="mdi-unfold-more-horizontal" size="small"></v-icon>
