@@ -14,44 +14,6 @@ export default [
     beforeEnter: isAdmin,
   },
   {
-    path: "/admin/projects/:id",
-    component: () => import("../views/Admin/AdminProjectSettings.vue"),
-    beforeEnter: isAdmin,
-    meta: { admin: true },
-    children: [
-      {
-        path: "",
-        name: "adminProjectGeneral",
-        component: () =>
-          import("../views/Projects/ProjectSettings/GeneralProjectSettings.vue"),
-      },
-      {
-        path: "board-columns",
-        name: "adminProjectBoardColumns",
-        component: () =>
-          import("../views/Projects/ProjectSettings/BoardColumnsProjectSettings.vue"),
-      },
-      {
-        path: "story-types",
-        name: "adminProjectStoryTypes",
-        component: () =>
-          import("../views/Projects/ProjectSettings/StoryTypesProjectSettings.vue"),
-      },
-      {
-        path: "repos",
-        name: "adminProjectRepos",
-        component: () =>
-          import("../views/Projects/ProjectSettings/ReposProjectSettings.vue"),
-      },
-      {
-        path: "members",
-        name: "adminProjectMembers",
-        component: () =>
-          import("../views/Projects/ProjectSettings/MembersProjectSettings.vue"),
-      },
-    ],
-  },
-  {
     path: "/admin/users",
     name: "adminUsers",
     component: () => import("../views/Admin/AdminUserList.vue"),
