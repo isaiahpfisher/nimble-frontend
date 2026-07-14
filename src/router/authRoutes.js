@@ -8,6 +8,12 @@ export default [
     beforeEnter: isLoggedOut,
   },
   {
+    path: "/auth/github/callback",
+    name: "github-callback",
+    component: () => import("../views/Auth/GithubCallback.vue"),
+    beforeEnter: isLoggedOut,
+  },
+  {
     path: "/",
     name: "home",
     beforeEnter: resolveHome,

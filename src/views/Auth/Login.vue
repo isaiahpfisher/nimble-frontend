@@ -44,6 +44,13 @@ async function login() {
     });
 }
 
+function loginWithGithub() {
+  const clientId = "Ov23licf5vFRvrrq96Y8";
+  const redirectUri = "http://localhost:8081/auth/github/callback";
+  const scope = "user:email";
+  window.location.href = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scope}`;
+}
+
 function openCreateAccount() {
   isCreateAccount.value = true;
 }
@@ -74,6 +81,9 @@ function closeCreateAccount() {
         <v-card-actions>
           <v-btn variant="flat" color="secondary" @click="openCreateAccount()"
             >Create Account</v-btn
+          >
+          <v-btn variant="flat" color="primary" @click="loginWithGithub()"
+            >Continue with GitHub</v-btn
           >
           <v-spacer></v-spacer>
 
