@@ -50,7 +50,15 @@ function logout() {
 const projects = ref([]); // current user's projects
 const selectedProject = ref(null);
 
-const routeProjectId = computed(() => Number(route.params.id) || null);
+// Only project routes carry a project id in `:id`. Other routes (e.g.
+// /admin/users/:id) reuse the `id` param for a different entity, so we must
+// not treat those as a selected project.
+const isProjectRoute = computed(() =>
+  route.matched.some((r) => r.path.startsWith("/projects/")),
+);
+const routeProjectId = computed(() =>
+  isProjectRoute.value ? Number(route.params.id) || null : null,
+);
 
 // An admin can open a project they don't belong to/
 // We need to check that to render things differently for admins.
