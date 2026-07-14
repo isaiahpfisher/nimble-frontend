@@ -24,6 +24,8 @@ const initials = computed(() =>
 onMounted(async () => {
   user.value = JSON.parse(localStorage.getItem("user"));
 
+  if (!user.value) return;
+
   loadProjects();
   window.addEventListener("project-updated", loadProjects);
 });
