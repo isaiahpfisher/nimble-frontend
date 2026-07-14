@@ -50,7 +50,13 @@ function logout() {
 const projects = ref([]); // current user's projects
 const selectedProject = ref(null);
 
-const routeProjectId = computed(() => Number(route.params.id) || null);
+// to make sure we don't use the :id route param for other tables
+const isProjectRoute = computed(() =>
+  route.matched.some((r) => r.path.startsWith("/projects/")),
+);
+const routeProjectId = computed(() =>
+  isProjectRoute.value ? Number(route.params.id) || null : null,
+);
 
 // An admin can open a project they don't belong to/
 // We need to check that to render things differently for admins.
