@@ -4,13 +4,15 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 COPY . .
-# Build the app to serve at the site root ("/") since nginx serves it there,
-# overriding the legacy "/nimble-frontend/" subpath base.
-RUN APP_BASE=/ npm run build
+# Build the app to serve under the "/nimble-frontend/" subpath, since on AWS
+# Apache owns the root and reverse-proxies /nimble-frontend/ to this container.
+RUN APP_BASE=/nimble-frontend/ npm run build
 
 # ---- serve stage ----
 FROM nginx:alpine
-COPY --from=build /app/dist /usr/share/nginx/html
+# Place the build under a matching subdir so filesystem paths line up with the
+# /nimble-frontend/ URL prefix (nginx uses `root`, not `alias`).
+COPY --from=build /app/dist /usr/share/nginx/html/nimble-frontend
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
