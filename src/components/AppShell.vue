@@ -50,9 +50,7 @@ function logout() {
 const projects = ref([]); // current user's projects
 const selectedProject = ref(null);
 
-// Only project routes carry a project id in `:id`. Other routes (e.g.
-// /admin/users/:id) reuse the `id` param for a different entity, so we must
-// not treat those as a selected project.
+// to make sure we don't use the :id route param for other tables
 const isProjectRoute = computed(() =>
   route.matched.some((r) => r.path.startsWith("/projects/")),
 );
