@@ -155,12 +155,12 @@ const adminItems = ref([
       Back to Projects
     </v-btn>
     <v-btn
-      v-else-if="user !== null"
+      v-else-if="user !== null && selectedProject !== null"
       class="mx-4"
       variant="flat"
       color="white"
       prepend-icon="mdi-plus"
-      @click="snackbar.show('TODO: Implement Story Creation')"
+      :to="{ name: 'createStory', params: { id: selectedProject.id } }"
     >
       New Story
     </v-btn>
