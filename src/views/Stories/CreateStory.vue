@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, nextTick, ref } from "vue";
+import { onMounted, ref } from "vue";
 import ProjectServices from "../../services/ProjectServices.js";
 import StoryServices from "../../services/StoryServices.js";
 import SnackBar from "../../components/SnackBar.vue";
@@ -10,9 +10,8 @@ const projectId = Number(useRoute().params.id);
 
 const user = ref(null);
 const project = ref(null);
-const story = ref({ acceptanceCriteria: [] });
+const story = ref({});
 const snackbar = ref(null);
-const criterionInputs = ref([]);
 
 onMounted(async () => {
   user.value = JSON.parse(localStorage.getItem("user"));
@@ -45,26 +44,6 @@ async function createStory() {
     snackbar.value.show(error.response?.data?.message ?? error.message);
   }
 }
-
-function addCriterion() {
-  if (!story.value.acceptanceCriteria) {
-    story.value.acceptanceCriteria = [];
-  }
-  story.value.acceptanceCriteria.push({
-    title: "",
-    description: "",
-    status: "Pending",
-  });
-
-  nextTick(() => {
-    const last = criterionInputs.value[criterionInputs.value.length - 1];
-    last?.focus();
-  });
-}
-
-function deleteCriterion(index) {
-  story.value.acceptanceCriteria.splice(index, 1);
-}
 </script>
 
 <template>
@@ -94,6 +73,8 @@ function deleteCriterion(index) {
           <v-col class="px-2">
             <v-textarea
               v-model="story.description"
+              auto-grow
+              rows="3"
               label="Description (TODO: support rich text if time permits)"
             ></v-textarea>
           </v-col>
@@ -175,65 +156,6 @@ function deleteCriterion(index) {
             ></v-autocomplete>
           </v-col>
         </v-row>
-
-        <v-toolbar flat density="compact" color="transparent" class="px-2">
-          <v-toolbar-title class="text-subtitle-1 font-weight-medium">
-            Acceptance Criteria
-          </v-toolbar-title>
-
-          <v-btn
-            prepend-icon="mdi-plus"
-            rounded="lg"
-            text="Add"
-            border
-            @click="addCriterion()"
-          ></v-btn>
-        </v-toolbar>
-
-        <v-list bg-color="transparent">
-          <v-list-item
-            v-if="!story.acceptanceCriteria || !story.acceptanceCriteria.length"
-            title="No acceptance criteria yet. Click Add to create one."
-            class="text-medium-emphasis text-center"
-          ></v-list-item>
-
-          <v-list-item
-            v-for="(criterion, index) in story.acceptanceCriteria"
-            :key="index"
-            :class="
-              index !== story.acceptanceCriteria.length - 1
-                ? 'border-b-sm py-2'
-                : ''
-            "
-          >
-            <v-text-field
-              ref="criterionInputs"
-              v-model="criterion.title"
-              placeholder="Acceptance criterion"
-              variant="plain"
-              density="compact"
-              hide-details
-            ></v-text-field>
-            <v-textarea
-              v-model="criterion.description"
-              placeholder="Add a description (optional)"
-              variant="plain"
-              density="compact"
-              rows="1"
-              auto-grow
-              hide-details
-            ></v-textarea>
-
-            <template v-slot:append>
-              <v-btn
-                icon="mdi-close"
-                size="small"
-                variant="text"
-                @click="deleteCriterion(index)"
-              ></v-btn>
-            </template>
-          </v-list-item>
-        </v-list>
       </v-card-text>
       <v-card-actions class="pt-0">
         <v-spacer></v-spacer>

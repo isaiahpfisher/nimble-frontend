@@ -1,33 +1,35 @@
 <script setup>
-import { onMounted, ref } from "vue";
+import { onMounted, ref, watch } from "vue";
 import ProjectServices from "../../services/ProjectServices.js";
 import StoryServices from "../../services/StoryServices.js";
 import SnackBar from "../../components/SnackBar.vue";
+import StoryRelations from "../../components/StoryRelations.vue";
+import StoryAcceptanceCriteria from "../../components/StoryAcceptanceCriteria.vue";
 import { useRouter, useRoute } from "vue-router";
 
 const router = useRouter();
-const { projectId, storyId } = useRoute().params;
+const route = useRoute();
+const { projectId } = route.params;
+const storyId = Number(route.params.storyId);
 
 const user = ref(null);
 const project = ref(null);
 const story = ref({ acceptanceCriteria: [] });
+const projectStories = ref([]);
 const snackbar = ref(null);
 
-const drawer = ref(false);
-const editingIndex = ref(null);
-const draftCriterion = ref(null);
 const confirmDelete = ref(false);
-
-const statusLookup = {
-  Passed: { color: "success", icon: "mdi-check" },
-  Failed: { color: "error", icon: "mdi-close" },
-  Pending: { color: "blue", icon: "mdi-circle-small" },
-};
 
 onMounted(async () => {
   user.value = JSON.parse(localStorage.getItem("user"));
   await getStory(projectId, storyId);
   await getProject(projectId);
+  await getProjectStories(projectId);
+});
+
+watch(storyId, async (id) => {
+  await getStory(projectId, id);
+  await getProjectStories(projectId);
 });
 
 async function getStory(projectId, storyId) {
@@ -50,9 +52,22 @@ async function getProject(id) {
   }
 }
 
-async function updateStory() {
+async function getProjectStories(id) {
   try {
-    await StoryServices.updateStory(projectId, storyId, story.value);
+    const response = await StoryServices.getStoriesForProject(id);
+    projectStories.value = response.data;
+  } catch (error) {
+    console.log(error);
+    snackbar.value.show(error.message);
+  }
+}
+
+async function updateStory() {
+  const { acceptanceCriteria, relationOne, relationTwo, ...newStoryInfo } =
+    story.value;
+
+  try {
+    await StoryServices.updateStory(projectId, storyId, newStoryInfo);
     snackbar.value.show("Story updated successfully");
     await getStory(projectId, storyId);
     await getProject(projectId);
@@ -70,47 +85,6 @@ async function deleteStory() {
     console.error(error);
     snackbar.value.show(error.response?.data?.message ?? error.message);
   }
-}
-
-function addCriterion() {
-  editingIndex.value = null;
-  draftCriterion.value = {
-    title: "",
-    description: "",
-    status: "Pending",
-  };
-  drawer.value = true;
-}
-
-function openCriterion(index) {
-  editingIndex.value = index;
-  draftCriterion.value = { ...story.value.acceptanceCriteria[index] };
-  drawer.value = true;
-}
-
-function saveCriterion() {
-  if (!story.value.acceptanceCriteria) {
-    story.value.acceptanceCriteria = [];
-  }
-  if (editingIndex.value === null) {
-    story.value.acceptanceCriteria.push(draftCriterion.value);
-  } else {
-    story.value.acceptanceCriteria[editingIndex.value] = draftCriterion.value;
-  }
-  closeDrawer();
-}
-
-function deleteCriterion() {
-  if (editingIndex.value !== null) {
-    story.value.acceptanceCriteria.splice(editingIndex.value, 1);
-  }
-  closeDrawer();
-}
-
-function closeDrawer() {
-  drawer.value = false;
-  editingIndex.value = null;
-  draftCriterion.value = null;
 }
 </script>
 
@@ -157,6 +131,8 @@ function closeDrawer() {
               <v-col class="px-2">
                 <v-textarea
                   v-model="story.description"
+                  auto-grow
+                  rows="3"
                   label="Description (TODO: support rich text if time permits)"
                 ></v-textarea>
               </v-col>
@@ -164,63 +140,26 @@ function closeDrawer() {
           </v-card-text>
         </v-card>
 
-        <v-card class="rounded-lg elevation-5 mt-4">
-          <v-toolbar flat density="compact" color="transparent" class="px-2">
-            <v-toolbar-title class="text-subtitle-1 font-weight-medium">
-              Acceptance Criteria
-            </v-toolbar-title>
-            <v-btn
-              prepend-icon="mdi-plus"
-              rounded="lg"
-              text="Add Criterion"
-              border
-              @click="addCriterion()"
-            ></v-btn>
-          </v-toolbar>
+        <div class="mt-4">
+          <StoryRelations
+            :project-id="projectId"
+            :story-id="storyId"
+            :story="story"
+            :project-stories="projectStories"
+            @changed="getStory(projectId, storyId)"
+            @error="(message) => snackbar.show(message)"
+          />
+        </div>
 
-          <v-list bg-color="transparent">
-            <v-list-item
-              v-if="
-                !story.acceptanceCriteria || !story.acceptanceCriteria.length
-              "
-              title="No acceptance criteria yet. Click Add to create one."
-              class="text-medium-emphasis text-center"
-            ></v-list-item>
-
-            <v-list-item
-              v-for="(criterion, index) in story.acceptanceCriteria"
-              :key="index"
-              :class="
-                index !== story.acceptanceCriteria.length - 1
-                  ? 'border-b-sm'
-                  : ''
-              "
-              @click="openCriterion(index)"
-            >
-              <template v-slot:prepend>
-                <v-chip
-                  :color="statusLookup[criterion.status]?.color"
-                  :prepend-icon="statusLookup[criterion.status]?.icon"
-                  size="small"
-                  label
-                  class="mr-3"
-                >
-                  {{ criterion.status }}
-                </v-chip>
-              </template>
-
-              <v-list-item-title>
-                {{ criterion.title || "Untitled criterion" }}
-              </v-list-item-title>
-
-              <template v-slot:append>
-                <v-icon size="small" color="medium-emphasis">
-                  mdi-chevron-right
-                </v-icon>
-              </template>
-            </v-list-item>
-          </v-list>
-        </v-card>
+        <div class="mt-4">
+          <StoryAcceptanceCriteria
+            :project-id="projectId"
+            :story-id="storyId"
+            :criteria="story.acceptanceCriteria ?? []"
+            @changed="getStory(projectId, storyId)"
+            @error="(message) => snackbar.show(message)"
+          />
+        </div>
       </v-col>
       <v-col cols="3">
         <v-card class="rounded-lg elevation-5">
@@ -313,60 +252,6 @@ function closeDrawer() {
       </v-col>
     </v-row>
   </v-container>
-
-  <v-navigation-drawer
-    v-model="drawer"
-    location="right"
-    temporary
-    width="420"
-    @update:model-value="(val) => !val && closeDrawer()"
-  >
-    <template v-if="draftCriterion">
-      <v-toolbar flat density="comfortable" color="transparent">
-        <v-toolbar-title class="text-subtitle-1 font-weight-medium">
-          {{ editingIndex === null ? "New Criterion" : draftCriterion.title }}
-        </v-toolbar-title>
-        <v-btn icon="mdi-close" variant="text" @click="closeDrawer()"></v-btn>
-      </v-toolbar>
-      <v-divider></v-divider>
-
-      <div class="pa-4">
-        <v-select
-          v-model="draftCriterion.status"
-          :items="['Pending', 'Passed', 'Failed']"
-          label="Status"
-        ></v-select>
-
-        <v-text-field
-          v-model="draftCriterion.title"
-          label="Title"
-        ></v-text-field>
-
-        <v-textarea
-          v-model="draftCriterion.description"
-          label="Description"
-          rows="4"
-          auto-grow
-        ></v-textarea>
-
-        <div class="d-flex ga-2">
-          <v-btn
-            v-if="editingIndex !== null"
-            variant="text"
-            color="error"
-            prepend-icon="mdi-delete"
-            @click="deleteCriterion()"
-            >Delete
-          </v-btn>
-          <v-spacer></v-spacer>
-          <v-btn variant="text" @click="closeDrawer()">Cancel</v-btn>
-          <v-btn variant="flat" color="primary" @click="saveCriterion()">
-            {{ editingIndex === null ? "Add" : "Save" }}
-          </v-btn>
-        </div>
-      </div>
-    </template>
-  </v-navigation-drawer>
 
   <v-dialog v-model="confirmDelete" max-width="420">
     <v-card class="rounded-lg">
