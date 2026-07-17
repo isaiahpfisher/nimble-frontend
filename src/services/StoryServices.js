@@ -4,6 +4,9 @@ export default {
   getStories() {
     return apiClient.get("stories");
   },
+  getStoriesForProject(projectId) {
+    return apiClient.get(`projects/${projectId}/stories`);
+  },
   getStory(projectId, storyId) {
     return apiClient.get(`projects/${projectId}/stories/${storyId}`);
   },

@@ -123,6 +123,7 @@ const userItems = ref([
   { title: "Story Board", icon: "mdi-view-column", name: "projectBoard" },
   { title: "Backlog", icon: "mdi-database", name: "projectBacklog" },
   { title: "Sprints", icon: "mdi-chart-gantt", name: "projectSprints" },
+  { title: "All Stories", icon: "mdi-view-list", name: "projectStories" },
   {
     title: "Project Settings",
     icon: "mdi-cog",
