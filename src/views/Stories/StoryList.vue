@@ -23,7 +23,10 @@ function removeDuplicatesAndSort(array) {
   const unique = [];
 
   array.forEach((item) => {
-    if (!unique.some((existing) => existing.value === item.value)) {
+    if (
+      !!item.value &&
+      !unique.some((existing) => existing.value === item.value)
+    ) {
       unique.push(item);
     }
   });
@@ -34,8 +37,8 @@ function removeDuplicatesAndSort(array) {
 const stateOptions = computed(() =>
   removeDuplicatesAndSort(
     stories.value?.map((story) => ({
-      value: story.state.id,
-      label: story.state.name,
+      value: story.state?.id,
+      label: story.state?.name,
     })),
   ),
 );
@@ -43,8 +46,8 @@ const stateOptions = computed(() =>
 const typeOptions = computed(() =>
   removeDuplicatesAndSort(
     stories.value?.map((story) => ({
-      value: story.type.id,
-      label: story.type.name,
+      value: story.type?.id,
+      label: story.type?.name,
     })),
   ),
 );
@@ -52,8 +55,8 @@ const typeOptions = computed(() =>
 const sprintOptions = computed(() =>
   removeDuplicatesAndSort(
     stories.value?.map((story) => ({
-      value: story.sprint.id,
-      label: story.sprint.name,
+      value: story.sprint?.id,
+      label: story.sprint?.name,
     })),
   ),
 );
@@ -61,8 +64,8 @@ const sprintOptions = computed(() =>
 const assigneeOptions = computed(() =>
   removeDuplicatesAndSort(
     stories.value?.map((story) => ({
-      value: story.assignee.id,
-      label: `${story.assignee.firstName} ${story.assignee.lastName}`,
+      value: story.assignee?.id,
+      label: `${story.assignee?.firstName} ${story.assignee?.lastName}`,
     })),
   ),
 );
