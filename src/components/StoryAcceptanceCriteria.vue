@@ -1,6 +1,7 @@
 <script setup>
 import { ref } from "vue";
 import AcceptanceCriteriaServices from "../services/AcceptanceCriteriaServices.js";
+import Comments from "./Comments.vue";
 
 const props = defineProps({
   projectId: { type: [String, Number], required: true },
@@ -189,6 +190,14 @@ function closeDrawer() {
           </v-btn>
         </div>
       </div>
+      <v-divider class="mt-4"></v-divider>
+      <Comments
+        v-if="editingId !== null"
+        :project-id="projectId"
+        :story-id="storyId"
+        :criterion-id="editingId"
+        @error="(message) => emit('error', message)"
+      />
     </template>
   </v-navigation-drawer>
 </template>

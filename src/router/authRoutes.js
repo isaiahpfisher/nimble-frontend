@@ -5,7 +5,6 @@ export default [
     path: "/login",
     name: "login",
     component: () => import("../views/Auth/Login.vue"),
-    beforeEnter: isLoggedOut,
   },
   {
     path: "/auth/github/callback",

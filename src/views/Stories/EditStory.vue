@@ -6,6 +6,7 @@ import SnackBar from "../../components/SnackBar.vue";
 import StoryRelations from "../../components/StoryRelations.vue";
 import StoryAcceptanceCriteria from "../../components/StoryAcceptanceCriteria.vue";
 import { useRouter, useRoute } from "vue-router";
+import Comments from "../../components/Comments.vue";
 
 const router = useRouter();
 const route = useRoute();
@@ -157,6 +158,14 @@ async function deleteStory() {
             :story-id="storyId"
             :criteria="story.acceptanceCriteria ?? []"
             @changed="getStory(projectId, storyId)"
+            @error="(message) => snackbar.show(message)"
+          />
+        </div>
+
+        <div class="mt-4">
+          <Comments
+            :project-id="projectId"
+            :story-id="storyId"
             @error="(message) => snackbar.show(message)"
           />
         </div>
