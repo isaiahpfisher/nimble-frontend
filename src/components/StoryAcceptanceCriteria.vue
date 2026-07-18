@@ -1,5 +1,6 @@
 <script setup>
-import { onMounted, ref } from "vue";
+import { onMounted, ref, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import AcceptanceCriteriaServices from "../services/AcceptanceCriteriaServices.js";
 import StoryServices from "../services/StoryServices.js";
 import Comments from "./Comments.vue";
@@ -10,6 +11,9 @@ const props = defineProps({
 });
 
 const emit = defineEmits(["error"]);
+
+const route = useRoute();
+const router = useRouter();
 
 const criteria = ref([]);
 const drawer = ref(false);
@@ -24,7 +28,25 @@ const statusLookup = {
 
 onMounted(async () => {
   await getCriteria();
+  openFromQuery();
 });
+
+function openFromQuery() {
+  const id = route.query.ac ? Number(route.query.ac) : null;
+
+  if (id === null) {
+    resetDrawer();
+    return;
+  }
+  if (editingId.value === id) return;
+
+  const criterion = criteria.value.find((c) => c.id === id);
+  if (criterion) {
+    editingId.value = criterion.id;
+    draftCriterion.value = { ...criterion };
+    drawer.value = true;
+  }
+}
 
 async function getCriteria() {
   try {
@@ -97,6 +119,14 @@ async function deleteCriterion() {
 }
 
 function closeDrawer() {
+  resetDrawer();
+  if (route.query.ac) {
+    const { ac, ...query } = route.query;
+    router.replace({ query });
+  }
+}
+
+function resetDrawer() {
   drawer.value = false;
   editingId.value = null;
   draftCriterion.value = null;
@@ -129,7 +159,7 @@ function closeDrawer() {
         v-for="(criterion, index) in criteria"
         :key="criterion.id"
         :class="index !== criteria.length - 1 ? 'border-b-sm' : ''"
-        @click="openCriterion(criterion)"
+        @click.stop="openCriterion(criterion)"
       >
         <template v-slot:prepend>
           <v-chip

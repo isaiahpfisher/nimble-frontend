@@ -1,9 +1,33 @@
 <script setup>
 import { onMounted, ref } from "vue";
+import { QuillEditor, Quill } from "@vueup/vue-quill";
+import MarkdownShortcuts from "quill-markdown-shortcuts";
+import MagicUrl from "quill-magic-url";
+import DOMPurify from "dompurify";
+import "@vueup/vue-quill/dist/vue-quill.snow.css";
 import ProjectServices from "../../services/ProjectServices.js";
 import StoryServices from "../../services/StoryServices.js";
 import SnackBar from "../../components/SnackBar.vue";
 import { useRouter, useRoute } from "vue-router";
+
+Quill.register(
+  {
+    "modules/markdownShortcuts": MarkdownShortcuts,
+    "modules/magicUrl": MagicUrl,
+  },
+  true,
+);
+
+const quillModules = {
+  toolbar: [
+    [{ header: [1, 2, 3, false] }],
+    ["bold", "italic", "underline"],
+    ["link"],
+    [{ list: "ordered" }, { list: "bullet" }],
+  ],
+  markdownShortcuts: {},
+  magicUrl: true,
+};
 
 const router = useRouter();
 const projectId = Number(useRoute().params.id);
@@ -34,7 +58,10 @@ async function getProject(id) {
 
 async function createStory() {
   try {
-    const newStory = await StoryServices.createStory(projectId, story.value);
+    const newStory = await StoryServices.createStory(projectId, {
+      ...story.value,
+      description: DOMPurify.sanitize(story.value.description ?? ""),
+    });
     router.push({
       name: "editStory",
       params: { projectId, storyId: newStory.data.id },
@@ -71,12 +98,16 @@ async function createStory() {
         </v-row>
         <v-row no-gutters>
           <v-col class="px-2">
-            <v-textarea
-              v-model="story.description"
-              auto-grow
-              rows="3"
-              label="Description (TODO: support rich text if time permits)"
-            ></v-textarea>
+            <div class="mb-6">
+              <QuillEditor
+                v-model:content="story.description"
+                content-type="html"
+                :options="{
+                  placeholder: 'Description',
+                  modules: quillModules,
+                }"
+              />
+            </div>
           </v-col>
         </v-row>
         <v-row no-gutters>

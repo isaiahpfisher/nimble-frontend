@@ -1,5 +1,10 @@
 <script setup>
 import { onMounted, ref, watch } from "vue";
+import { QuillEditor, Quill } from "@vueup/vue-quill";
+import MarkdownShortcuts from "quill-markdown-shortcuts";
+import MagicUrl from "quill-magic-url";
+import DOMPurify from "dompurify";
+import "@vueup/vue-quill/dist/vue-quill.snow.css";
 import ProjectServices from "../../services/ProjectServices.js";
 import StoryServices from "../../services/StoryServices.js";
 import SnackBar from "../../components/SnackBar.vue";
@@ -19,6 +24,25 @@ const story = ref({ acceptanceCriteria: [] });
 const snackbar = ref(null);
 
 const confirmDelete = ref(false);
+
+Quill.register(
+  {
+    "modules/markdownShortcuts": MarkdownShortcuts,
+    "modules/magicUrl": MagicUrl,
+  },
+  true,
+);
+
+const quillModules = {
+  toolbar: [
+    [{ header: [1, 2, 3, false] }],
+    ["bold", "italic", "underline"],
+    ["link"],
+    [{ list: "ordered" }, { list: "bullet" }],
+  ],
+  markdownShortcuts: {},
+  magicUrl: true,
+};
 
 onMounted(async () => {
   user.value = JSON.parse(localStorage.getItem("user"));
@@ -53,6 +77,8 @@ async function getProject(id) {
 async function updateStory() {
   const { acceptanceCriteria, relationOne, relationTwo, ...newStoryInfo } =
     story.value;
+
+  newStoryInfo.description = DOMPurify.sanitize(newStoryInfo.description ?? "");
 
   try {
     await StoryServices.updateStory(projectId, storyId, newStoryInfo);
@@ -117,12 +143,16 @@ async function deleteStory() {
             </v-row>
             <v-row no-gutters>
               <v-col class="px-2">
-                <v-textarea
-                  v-model="story.description"
-                  auto-grow
-                  rows="3"
-                  label="Description (TODO: support rich text if time permits)"
-                ></v-textarea>
+                <div class="mb-6">
+                  <QuillEditor
+                    v-model:content="story.description"
+                    content-type="html"
+                    :options="{
+                      placeholder: 'Description',
+                      modules: quillModules,
+                    }"
+                  />
+                </div>
               </v-col>
             </v-row>
           </v-card-text>

@@ -1,8 +1,26 @@
 <script setup>
 import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
+import { QuillEditor, Quill } from "@vueup/vue-quill";
+import { Mention, MentionBlot } from "quill-mention";
+import MarkdownShortcuts from "quill-markdown-shortcuts";
+import MagicUrl from "quill-magic-url";
+import DOMPurify from "dompurify";
+import "@vueup/vue-quill/dist/vue-quill.snow.css";
+import "quill-mention/dist/quill.mention.css";
 import CommentServices from "../services/CommentServices.js";
+import ProjectServices from "../services/ProjectServices.js";
 import { formatDate } from "../utils/date.js";
+
+Quill.register(
+  {
+    "blots/mention": MentionBlot,
+    "modules/mention": Mention,
+    "modules/markdownShortcuts": MarkdownShortcuts,
+    "modules/magicUrl": MagicUrl,
+  },
+  true,
+);
 
 const props = defineProps({
   projectId: { type: Number, required: true },
@@ -17,6 +35,58 @@ const comments = ref([]);
 const newComment = ref("");
 const user = ref(null);
 
+const mentionMembers = ref([]);
+const editorKey = ref(0); // weird hack to fix editor not clearing after submitting comments
+
+const quillModules = {
+  toolbar: [
+    [{ header: [1, 2, 3, false] }],
+    ["bold", "italic", "underline"],
+    ["link"],
+    [{ list: "ordered" }, { list: "bullet" }],
+  ],
+  markdownShortcuts: {},
+  magicUrl: true,
+  mention: {
+    allowedChars: /^[A-Za-z0-9_\-\s]*$/,
+    mentionDenotationChars: ["@"],
+    dataAttributes: ["id", "value"],
+    positioningStrategy: "fixed",
+    source(searchTerm, renderList) {
+      const term = searchTerm.toLowerCase();
+      const matches = mentionMembers.value.filter((m) =>
+        m.value.toLowerCase().includes(term),
+      );
+      renderList(matches, searchTerm);
+    },
+  },
+};
+
+function onEditorReady(quill) {
+  quill.root.addEventListener(
+    "keydown",
+    (e) => {
+      if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        addComment();
+      }
+    },
+    true,
+  );
+}
+
+function renderContent(content) {
+  return DOMPurify.sanitize(content ?? "");
+}
+
+const isCommentEmpty = computed(() => {
+  const text = renderContent(newComment.value)
+    .replace(/<[^>]*>/g, "")
+    .trim();
+  return text.length === 0;
+});
+
 function initials(user) {
   return `${user.firstName[0]}${user.lastName[0]}`.toUpperCase();
 }
@@ -24,12 +94,29 @@ function initials(user) {
 onMounted(async () => {
   user.value = JSON.parse(localStorage.getItem("user"));
 
+  await getProjectMembers();
+
   if (!!props.criterionId) {
     await getCommentsForCriterion();
   } else {
     await getCommentsForStory();
   }
 });
+
+async function getProjectMembers() {
+  try {
+    const response = await ProjectServices.getProject(props.projectId);
+    mentionMembers.value = (response.data.projectMembers ?? [])
+      .filter((m) => !!m.user && m.user.id != user.value?.id)
+      .map((m) => ({
+        id: m.user.id,
+        value: `${m.user.firstName} ${m.user.lastName}`,
+      }));
+  } catch (error) {
+    console.error(error);
+    emit("error", error.response?.data?.message ?? error.message);
+  }
+}
 
 async function getCommentsForStory() {
   try {
@@ -51,7 +138,6 @@ async function getCommentsForCriterion() {
       props.storyId,
       props.criterionId,
     );
-    console.log(response.data);
     comments.value = response.data;
   } catch (error) {
     console.error(error);
@@ -61,8 +147,9 @@ async function getCommentsForCriterion() {
 
 async function addComment() {
   try {
-    if (!newComment.value) return;
+    if (isCommentEmpty.value) return;
 
+    const content = renderContent(newComment.value);
     let response;
 
     if (!!props.criterionId) {
@@ -70,17 +157,18 @@ async function addComment() {
         props.projectId,
         props.storyId,
         props.criterionId,
-        { content: newComment.value },
+        { content },
       );
     } else {
       response = await CommentServices.createCommentForStory(
         props.projectId,
         props.storyId,
-        { content: newComment.value },
+        { content },
       );
     }
     comments.value.push(response.data);
     newComment.value = "";
+    editorKey.value++; // change key to force editor to remount
   } catch (error) {
     console.error(error);
     emit("error", error.response?.data?.message ?? error.message);
@@ -105,6 +193,7 @@ async function deleteComment(commentId) {
     type="card"
   ></v-skeleton-loader>
   <v-card
+    class="overflow-visible"
     :class="!criterionId ? 'rounded-lg elevation-5' : 'border-0 elevation-0'"
   >
     <v-toolbar
@@ -145,9 +234,10 @@ async function deleteComment(commentId) {
               @click="deleteComment(comment.id)"
             ></v-btn>
           </v-list-item-title>
-          <div class="text-body-2 mt-1">
-            {{ comment.content }}
-          </div>
+          <div
+            class="text-body-2 mt-1 comment-content ql-editor"
+            v-html="renderContent(comment.content)"
+          ></div>
         </v-list-item>
         <v-divider
           v-if="index !== comments.length - 1 && comments.length > 1"
@@ -156,20 +246,65 @@ async function deleteComment(commentId) {
     </v-list>
     <v-divider></v-divider>
     <div class="pa-3">
-      <v-textarea
-        v-model="newComment"
-        label="Add a new comment (TODO: @mentions)"
-        density="compact"
-        rows="3"
-        auto-grow
-        hide-details
-      ></v-textarea>
+      <QuillEditor
+        :key="editorKey"
+        v-model:content="newComment"
+        content-type="html"
+        @ready="onEditorReady"
+        :options="{
+          placeholder: 'Add a comment — type @ to mention someone',
+          modules: quillModules,
+        }"
+      />
       <div class="d-flex mt-2">
         <v-spacer></v-spacer>
-        <v-btn variant="flat" color="primary" @click="addComment()"
+        <v-btn
+          variant="flat"
+          color="primary"
+          :disabled="isCommentEmpty"
+          @click="addComment()"
           >Add Comment</v-btn
         >
       </div>
     </div>
   </v-card>
 </template>
+
+<style scoped>
+/* wanted to avoid custom css blocks, but seems like the best way to style mention blocks */
+.comment-content.ql-editor {
+  padding: 0;
+  min-height: 0;
+  overflow: visible;
+}
+.comment-content :deep(p) {
+  margin: 0;
+}
+
+:deep(.ql-picker-options) {
+  z-index: 10;
+}
+/* customize heading sizes */
+:deep(.ql-editor h1) {
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin: 0.2em 0;
+}
+:deep(.ql-editor h2) {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin: 0.2em 0;
+}
+:deep(.ql-editor h3) {
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin: 0.2em 0;
+}
+.comment-content :deep(.mention) {
+  background-color: rgba(var(--v-theme-primary), 0.12) !important;
+  color: rgb(var(--v-theme-primary)) !important;
+  border-radius: 6px !important;
+  padding: 1px 2px !important;
+  font-weight: 500 !important;
+}
+</style>
