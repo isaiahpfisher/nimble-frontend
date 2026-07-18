@@ -1,18 +1,17 @@
 <script setup>
-import { computed, ref } from "vue";
-import { useRouter } from "vue-router";
+import { computed, onMounted, ref } from "vue";
 import RelationServices from "../services/RelationServices.js";
+import StoryServices from "../services/StoryServices.js";
 
 const props = defineProps({
   projectId: { type: [String, Number], required: true },
   storyId: { type: Number, required: true },
-  story: { type: Object, required: true },
-  projectStories: { type: Array, default: () => [] },
 });
 
-const emit = defineEmits(["changed", "error"]);
+const emit = defineEmits(["error"]);
 
-const router = useRouter();
+const story = ref(null);
+const projectStories = ref([]);
 const dialog = ref(false);
 const draftRelation = ref(null);
 
@@ -46,6 +45,34 @@ const relationTypes = {
   },
 };
 
+onMounted(async () => {
+  await getStory();
+  await getProjectStories();
+});
+
+async function getStory() {
+  try {
+    const response = await StoryServices.getStory(
+      props.projectId,
+      props.storyId,
+    );
+    story.value = response.data;
+  } catch (error) {
+    console.error(error);
+    emit("error", error.response?.data?.message ?? error.message);
+  }
+}
+
+async function getProjectStories() {
+  try {
+    const response = await StoryServices.getStoriesForProject(props.projectId);
+    projectStories.value = response.data;
+  } catch (error) {
+    console.error(error);
+    emit("error", error.response?.data?.message ?? error.message);
+  }
+}
+
 const relationOptions = computed(() => {
   const options = [];
   const entries = Object.entries(relationTypes); // [type, properties]
@@ -77,14 +104,14 @@ const relations = computed(() => {
 
   const result = [];
 
-  if (props.story.relationOne) {
-    props.story.relationOne.forEach((r) => {
+  if (story.value?.relationOne) {
+    story.value.relationOne.forEach((r) => {
       result.push(format(r, r.storyTwo, false));
     });
   }
 
-  if (props.story.relationTwo) {
-    props.story.relationTwo.forEach((r) => {
+  if (story.value?.relationTwo) {
+    story.value.relationTwo.forEach((r) => {
       result.push(format(r, r.storyOne, true));
     });
   }
@@ -95,8 +122,8 @@ const relations = computed(() => {
 const relationCandidates = computed(() => {
   const alreadyLinked = relations.value.map((r) => r.otherStory.id);
 
-  return props.projectStories
-    .filter((s) => s.id !== props.story.id && !alreadyLinked.includes(s.id))
+  return projectStories.value
+    .filter((s) => s.id !== props.storyId && !alreadyLinked.includes(s.id))
     .map((s) => ({ id: s.id, label: `${s.title}` }));
 });
 
@@ -112,8 +139,8 @@ async function saveRelation() {
   const [type, direction] = option.split(":");
   const relationInfo =
     direction === "inverse"
-      ? { type, storyOneId: otherId, storyTwoId: props.story.id }
-      : { type, storyOneId: props.story.id, storyTwoId: otherId };
+      ? { type, storyOneId: otherId, storyTwoId: props.storyId }
+      : { type, storyOneId: props.storyId, storyTwoId: otherId };
 
   try {
     await RelationServices.createRelation(
@@ -123,7 +150,7 @@ async function saveRelation() {
     );
     dialog.value = false;
     draftRelation.value = null;
-    emit("changed");
+    await getStory();
   } catch (error) {
     console.error(error);
     emit("error", error.response?.data?.message ?? error.message);
@@ -137,18 +164,11 @@ async function removeRelation(relationId) {
       props.storyId,
       relationId,
     );
-    emit("changed");
+    await getStory();
   } catch (error) {
     console.error(error);
     emit("error", error.response?.data?.message ?? error.message);
   }
-}
-
-function openRelatedStory(id) {
-  router.push({
-    name: "editStory",
-    params: { projectId: props.projectId, storyId: id },
-  });
 }
 </script>
 

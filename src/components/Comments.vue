@@ -158,7 +158,7 @@ async function deleteComment(commentId) {
     <div class="pa-3">
       <v-textarea
         v-model="newComment"
-        label="Add a new comment"
+        label="Add a new comment (TODO: @mentions)"
         density="compact"
         rows="3"
         auto-grow

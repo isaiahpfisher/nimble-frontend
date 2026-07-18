@@ -1,16 +1,17 @@
 <script setup>
-import { ref } from "vue";
+import { onMounted, ref } from "vue";
 import AcceptanceCriteriaServices from "../services/AcceptanceCriteriaServices.js";
+import StoryServices from "../services/StoryServices.js";
 import Comments from "./Comments.vue";
 
 const props = defineProps({
   projectId: { type: [String, Number], required: true },
   storyId: { type: Number, required: true },
-  criteria: { type: Array, default: () => [] },
 });
 
-const emit = defineEmits(["changed", "error"]);
+const emit = defineEmits(["error"]);
 
+const criteria = ref([]);
 const drawer = ref(false);
 const draftCriterion = ref(null);
 const editingId = ref(null);
@@ -20,6 +21,23 @@ const statusLookup = {
   Failed: { color: "error", icon: "mdi-close" },
   Pending: { color: "blue", icon: "mdi-circle-small" },
 };
+
+onMounted(async () => {
+  await getCriteria();
+});
+
+async function getCriteria() {
+  try {
+    const response = await StoryServices.getStory(
+      props.projectId,
+      props.storyId,
+    );
+    criteria.value = response.data.acceptanceCriteria ?? [];
+  } catch (error) {
+    console.error(error);
+    emit("error", error.response?.data?.message ?? error.message);
+  }
+}
 
 function addCriterion() {
   editingId.value = null;
@@ -54,7 +72,7 @@ async function saveCriterion() {
       );
     }
     closeDrawer();
-    emit("changed");
+    await getCriteria();
   } catch (error) {
     console.error(error);
     emit("error", error.response?.data?.message ?? error.message);
@@ -71,11 +89,10 @@ async function deleteCriterion() {
       editingId.value,
     );
     closeDrawer();
-    emit("changed");
+    await getCriteria();
   } catch (error) {
     console.error(error);
     emit("error", error.response?.data?.message ?? error.message);
-  } finally {
   }
 }
 

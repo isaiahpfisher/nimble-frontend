@@ -16,7 +16,6 @@ const storyId = Number(route.params.storyId);
 const user = ref(null);
 const project = ref(null);
 const story = ref({ acceptanceCriteria: [] });
-const projectStories = ref([]);
 const snackbar = ref(null);
 
 const confirmDelete = ref(false);
@@ -25,12 +24,10 @@ onMounted(async () => {
   user.value = JSON.parse(localStorage.getItem("user"));
   await getStory(projectId, storyId);
   await getProject(projectId);
-  await getProjectStories(projectId);
 });
 
 watch(storyId, async (id) => {
   await getStory(projectId, id);
-  await getProjectStories(projectId);
 });
 
 async function getStory(projectId, storyId) {
@@ -47,16 +44,6 @@ async function getProject(id) {
   try {
     const response = await ProjectServices.getProject(id);
     project.value = response.data;
-  } catch (error) {
-    console.log(error);
-    snackbar.value.show(error.message);
-  }
-}
-
-async function getProjectStories(id) {
-  try {
-    const response = await StoryServices.getStoriesForProject(id);
-    projectStories.value = response.data;
   } catch (error) {
     console.log(error);
     snackbar.value.show(error.message);
@@ -145,9 +132,6 @@ async function deleteStory() {
           <StoryRelations
             :project-id="projectId"
             :story-id="storyId"
-            :story="story"
-            :project-stories="projectStories"
-            @changed="getStory(projectId, storyId)"
             @error="(message) => snackbar.show(message)"
           />
         </div>
@@ -156,8 +140,6 @@ async function deleteStory() {
           <StoryAcceptanceCriteria
             :project-id="projectId"
             :story-id="storyId"
-            :criteria="story.acceptanceCriteria ?? []"
-            @changed="getStory(projectId, storyId)"
             @error="(message) => snackbar.show(message)"
           />
         </div>
