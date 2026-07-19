@@ -157,9 +157,10 @@ async function deleteStoryType(type) {
     <v-card class="rounded-lg elevation-5">
       <v-list lines="two">
         <v-list-item
-          v-for="type in storyTypes"
+          v-for="(type, index) in storyTypes"
           :key="type.id"
           :subtitle="getNumberOfStoriesLabel(type)"
+          :class="{ 'border-b': index < storyTypes.length - 1 || editingId === -1 }"
         >
           <template v-slot:prepend>
             <v-btn
