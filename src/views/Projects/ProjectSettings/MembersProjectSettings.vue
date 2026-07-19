@@ -6,6 +6,8 @@ import ProjectServices from "../../../services/ProjectServices.js";
 import ProjectMemberServices from "../../../services/ProjectMemberServices.js";
 import UserServices from "../../../services/UserServices.js";
 import SnackBar from "../../../components/SnackBar.vue";
+import { useRouter } from "vue-router";
+const router = useRouter();
 
 const route = useRoute();
 
@@ -35,6 +37,10 @@ function getUsername(id){
     console.log(users.value[i].id + users.value[i].firstName + id);
   }
   return username;
+}
+
+function leavepage(){
+  router.push({ name: "addMember" });
 }
 
 async function getUsers() {
@@ -88,16 +94,14 @@ async function getProjectMembers(id) {
               hide-details
               single-line
             ></v-text-field>
-          <!---
+
             <v-btn
               class="me-2"
               prepend-icon="mdi-plus"
               rounded="lg"
               text="New Project"
-              border
-              :to="{ name: 'adminCreateProject' }"
+              @click="leavepage()"
             ></v-btn>
-          -->
           </v-toolbar>
         </template>
       </v-data-table>
