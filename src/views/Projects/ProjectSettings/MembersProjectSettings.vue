@@ -2,7 +2,6 @@
 import { onMounted } from "vue";
 import { ref } from "vue";
 import { useRoute } from "vue-router";
-import ProjectServices from "../../../services/ProjectServices.js";
 import ProjectMemberServices from "../../../services/ProjectMemberServices.js";
 import UserServices from "../../../services/UserServices.js";
 import SnackBar from "../../../components/SnackBar.vue";
@@ -14,18 +13,20 @@ const route = useRoute();
 const user = ref(null);
 const users = ref(null);
 const projectId = ref(route.params.id);
-const project = ref(null);
+const projectMemberNonManager = {isManager: "0",  "userId": ref(null),   "projectId": ref(null)};
+const projectMemberManager = {isManager: "1",  "userId": ref(null),   "projectId": ref(null)};
 const projectMembers = ref(null);
 const snackbar = ref(null);
 const headers = [
-  { title: 'userId', key: 'userId', value: (item) => getUsername(item.userId)},
-  { title: 'role', key: 'isManager', value: (item) => item.isManager==1 ? 'Manager' : 'Member' },
+  { title: 'Name', key: 'userId', value: (item) => getUsername(item.userId)},
+  { title: 'Role', key: 'isManager', value: (item) => item.isManager==1 ? 'Manager' : 'Member' },
+  { title: 'Change Role', value: 'action1' },
+  { title: 'Remove', value: 'action' },
 ]
 
 onMounted(async () => {
   user.value = JSON.parse(localStorage.getItem("user"));
   getUsers()
-  getProjectMembers(projectId.value);
 });
 
 function getUsername(id){
@@ -34,7 +35,6 @@ function getUsername(id){
     if(users.value[i].id == id){
       username = users.value[i].firstName + " " + users.value[i].lastName;
     }
-    console.log(users.value[i].id + users.value[i].firstName + id);
   }
   return username;
 }
@@ -47,23 +47,54 @@ async function getUsers() {
   try {
     const response = await UserServices.getUsers();
     users.value = response.data;
-    console.log(users.value);
+    getProjectMembers(projectId.value);
   } catch (error) {
     console.error(error);
     snackbar.value.show(error.response?.data?.message ?? error.message);
   }
 }
 
-
 async function getProjectMembers(id) {
   try {
     const response = await ProjectMemberServices.getProjectMembersForCurrentProject(id);
     projectMembers.value = response.data;
-    console.log(projectMembers.value);
   } catch (error) {
     console.error(error);
     snackbar.value.show(error.response?.data?.message ?? error.message);
   }
+}
+
+async function removeMember(id){
+    try {
+    await ProjectMemberServices.deleteProjectMember(id);
+  } catch (error) {
+    console.error(error);
+    snackbar.value.show(error.response?.data?.message ?? error.message);
+  }
+  location.reload();
+}
+
+async function addManager(id){
+  try {
+    projectMemberManager.userId = id;
+    projectMemberManager.projectId = projectId.value;
+    await ProjectMemberServices.updateProjectMember(id, projectMemberManager);
+  } catch (error) {
+    console.error(error);
+    snackbar.value.show(error.response?.data?.message ?? error.message);
+  }
+  location.reload();
+}
+async function removeManager(id){
+  try {
+    projectMemberNonManager.userId = id;
+    projectMemberNonManager.projectId = projectId.value;
+    await ProjectMemberServices.updateProjectMember(id, projectMemberNonManager);
+  } catch (error) {
+    console.error(error);
+    snackbar.value.show(error.response?.data?.message ?? error.message);
+  }
+  location.reload();
 }
 </script>
 
@@ -99,10 +130,27 @@ async function getProjectMembers(id) {
               class="me-2"
               prepend-icon="mdi-plus"
               rounded="lg"
-              text="New Project"
+              text="Add Member"
               @click="leavepage()"
             ></v-btn>
           </v-toolbar>
+        </template>
+        <template v-slot:item.action1="{ item }">
+          <v-container v-if="item.isManager == '0'">
+            <v-btn @click="addManager(item.id)">
+              Add Manager
+            </v-btn>
+          </v-container>
+          <v-container v-else>
+            <v-btn @click="removeManager(item.id)">
+              Remove Manager
+            </v-btn>
+          </v-container>
+        </template>
+        <template v-slot:item.action="{ item }">
+            <v-btn @click="removeMember(item.id)">
+              Remove
+            </v-btn>
         </template>
       </v-data-table>
     </v-card>

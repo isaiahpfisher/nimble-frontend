@@ -13,8 +13,8 @@ export default {
   createProjectMember(projectMember, projectId, userId) {
     return apiClient.post(`projectMembers/${projectId}/${userId}`, projectMember);
   },
-  updateProjectMember(id, project) {
-    return apiClient.put(`projectMembers/${id}`, project);
+  updateProjectMember(id, projectMember) {
+    return apiClient.put(`projectMembers/${id}`, projectMember);
   },
   deleteProjectMember(id) {
     return apiClient.delete(`projectMembers/${id}`);
