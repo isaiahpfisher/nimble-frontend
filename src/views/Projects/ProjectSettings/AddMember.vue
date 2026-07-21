@@ -12,6 +12,7 @@ const route = useRoute();
 
 const user = ref(null);
 const users = ref(null);
+var userManager = false;
 const projectMember = {isManager: "0",  "userId": ref(null),   "projectId": ref(null)};
 const projectId = ref(route.params.id);
 const projectMembers = ref(null);
@@ -20,6 +21,7 @@ const headers = [
     { title: 'name', key: 'firstName', value: (item) => item.firstName +' '+ item.lastName},
     { title: 'Add', value: 'action' }
 ]
+const search = ref("");
 
 onMounted(async () => {
   user.value = JSON.parse(localStorage.getItem("user"));
@@ -35,6 +37,7 @@ async function getProjectMembers(id) {
     const response = await ProjectMemberServices.getProjectMembersForCurrentProject(id);
     projectMembers.value = response.data;
     getUsers();
+    userIsManager();
   } catch (error) {
     console.error(error);
     snackbar.value.show(error.response?.data?.message ?? error.message);
@@ -70,19 +73,31 @@ async function addMember(id){
     console.error(error);
     snackbar.value.show(error.response?.data?.message ?? error.message);
   }
-  location.reload();
+  router.go();
 }
+
+function userIsManager(){
+    for(var i = 0; i < projectMembers.value.length; i++){
+    if(projectMembers.value[i].userId == user.value.id){
+      userManager = true;
+    }
+  }
+  if(userManager == false){
+      snackbar.value.show("Unauthorized");
+    }
+}
+
 </script>
 
 <template>
-  <v-container v-if="!users">
+  <v-container v-if="!users||!userManager">
     <v-skeleton-loader color="secondary" type="card"></v-skeleton-loader>
   </v-container>
   <v-container v-else>
     <v-card variant="flat" border rounded="lg">
       <v-data-table
         v-model:search="search"
-        :filter-keys="['userId', projectId]"
+        :filter-keys="['firstName']"
         :items="users"
         :headers="headers"
       >
