@@ -199,11 +199,11 @@ function setEndDate(date) {
 
 function getStatusColor(status) {
   if (status === "Active") {
-    return "success";
-  } else if (status === "Completed") {
-    return "secondary";
-  } else if (status === "Planned") {
     return "blue";
+  } else if (status === "Completed") {
+    return "primary";
+  } else if (status === "Planned") {
+    return "black";
   }
 
   return "grey";
