@@ -123,6 +123,7 @@ const userItems = ref([
   { title: "Story Board", icon: "mdi-view-column", name: "projectBoard" },
   { title: "Backlog", icon: "mdi-database", name: "projectBacklog" },
   { title: "Sprints", icon: "mdi-chart-gantt", name: "projectSprints" },
+  { title: "All Stories", icon: "mdi-view-list", name: "projectStories" },
   {
     title: "Project Settings",
     icon: "mdi-cog",
@@ -155,12 +156,12 @@ const adminItems = ref([
       Back to Projects
     </v-btn>
     <v-btn
-      v-else-if="user !== null"
+      v-else-if="user !== null && selectedProject !== null"
       class="mx-4"
       variant="flat"
       color="white"
       prepend-icon="mdi-plus"
-      @click="snackbar.show('TODO: Implement Story Creation')"
+      :to="{ name: 'createStory', params: { id: selectedProject.id } }"
     >
       New Story
     </v-btn>

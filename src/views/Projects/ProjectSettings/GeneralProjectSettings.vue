@@ -63,9 +63,12 @@ async function deleteProject() {
     <v-skeleton-loader color="secondary" type="card"></v-skeleton-loader>
   </v-container>
   <v-container v-else>
-    <h4 class="pl-0 text-h5 mb-6 font-weight-medium">
-      {{ project.title }} Project Settings - General
-    </h4>
+    <div class="mb-6">
+      <div class="text-overline text-medium-emphasis mb-1">
+        {{ project.title }} · Project Settings
+      </div>
+      <h4 class="pl-0 text-h5 font-weight-medium">General Settings</h4>
+    </div>
 
     <v-card class="rounded-lg elevation-5">
       <v-card-text>
