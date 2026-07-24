@@ -61,6 +61,11 @@ export default [
         component: () =>
           import("../views/Projects/ProjectSettings/MembersProjectSettings.vue"),
       },
+      {
+        path: "addMember",
+        name: "addMember",
+        component: () => import("../views/Projects/ProjectSettings/AddMember.vue"),
+      },
     ],
   },
 ];

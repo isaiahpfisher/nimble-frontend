@@ -76,6 +76,7 @@ function closeCreateAccount() {
             v-model="user.password"
             label="Password"
             required
+            type="password"
           ></v-text-field>
         </v-card-text>
         <v-card-actions>
@@ -116,6 +117,7 @@ function closeCreateAccount() {
             <v-text-field
               v-model="user.password"
               label="Password"
+              type="password"
               required
             ></v-text-field>
           </v-card-text>
