@@ -3,6 +3,7 @@ import { onMounted } from "vue";
 import { ref } from "vue";
 import { useRoute } from "vue-router";
 import ProjectMemberServices from "../../../services/ProjectMemberServices.js";
+import ProjectServices from "../../../services/ProjectServices.js";
 import UserServices from "../../../services/UserServices.js";
 import SnackBar from "../../../components/SnackBar.vue";
 import { useRouter } from "vue-router";
@@ -18,6 +19,7 @@ const projectId = ref(route.params.id);
 const projectMemberNonManager = {isManager: "0",  "userId": ref(null),   "projectId": ref(null)};
 const projectMemberManager = {isManager: "1",  "userId": ref(null),   "projectId": ref(null)};
 const projectMembers = ref(null);
+const project = ref(null);
 const snackbar = ref(null);
 const search = ref("");
 const headers = [
@@ -32,7 +34,18 @@ onMounted(async () => {
   user.value = JSON.parse(localStorage.getItem("user"));
   userId = user.value.id;
   getUsers()
+  getProject(projectId.value);
 });
+
+async function getProject(id) {
+  try {
+    const response = await ProjectServices.getProject(id);
+    project.value = response.data;
+  } catch (error) {
+    console.error(error);
+    snackbar.value.show(error.response?.data?.message ?? error.message);
+  }
+}
 
 function getUsername(id){
   var username = "";
@@ -127,6 +140,12 @@ function checkIfUser(id){
     <v-skeleton-loader color="secondary" type="card"></v-skeleton-loader>
   </v-container>
   <v-container v-else>
+    <div class="mb-6">
+      <div class="text-overline text-medium-emphasis mb-1">
+        {{ project.title }} · Project Settings
+      </div>
+      <h4 class="pl-0 text-h5 font-weight-medium">Team Members</h4>
+    </div>
     <v-card variant="flat" border rounded="lg">
       <v-data-table
         v-model:search="search"
