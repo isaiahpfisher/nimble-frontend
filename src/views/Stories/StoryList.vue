@@ -56,7 +56,7 @@ const sprintOptions = computed(() =>
   removeDuplicatesAndSort(
     stories.value?.map((story) => ({
       value: story.sprint?.id,
-      label: story.sprint?.name,
+      label: story.sprint?.title,
     })),
   ),
 );
