@@ -4,9 +4,9 @@ import AppShell from "./components/AppShell.vue";
 
 <template>
   <v-app :style="{ background: '#F4F4F4' }">
-    <AppShell :key="$route.fullPath" />
+    <AppShell :key="$route.path" />
     <v-main>
-      <router-view :key="$route.params.id ?? $route.fullPath" />
+      <router-view :key="$route.params.id ?? $route.path" />
     </v-main>
   </v-app>
 </template>
