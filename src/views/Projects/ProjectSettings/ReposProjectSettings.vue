@@ -45,6 +45,10 @@ async function getRepositories(projectId) {
 }
 
 async function createRepository() {
+  if (!githubId.value || !repositoryName.value) {
+    snackbar.value.show("Repository ID and name are required.");
+    return;
+  }
   try {
     const repository = {
       githubId: githubId.value,
@@ -113,11 +117,15 @@ async function deleteRepository(id) {
         <v-text-field
           v-model="githubId"
           label="GitHub Repository ID"
+          hint="Enter the numeric ID from GitHub API"
+          persistent-hint
+          required
         ></v-text-field>
 
         <v-text-field
           v-model="repositoryName"
           label="Repository Name"
+          required
         ></v-text-field>
 
         <v-btn
