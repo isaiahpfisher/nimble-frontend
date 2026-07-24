@@ -1,7 +1,5 @@
-```vue
 <script setup>
-import { onMounted } from "vue";
-import { ref } from "vue";
+import { onMounted, ref } from "vue";
 import { useRoute } from "vue-router";
 import ProjectServices from "../../services/ProjectServices.js";
 import SprintServices from "../../services/SprintServices.js";
@@ -17,8 +15,13 @@ const snackbar = ref(null);
 
 const showDialog = ref(false);
 const editingSprint = ref(null);
+
 const showStartPicker = ref(false);
 const showEndPicker = ref(false);
+
+// Delete confirmation dialog
+const deleteDialog = ref(false);
+const sprintToDelete = ref(null);
 
 const statusOptions = ["Planned", "Active", "Completed"];
 const recurrenceOptions = ["Weekly", "Biweekly", "Monthly"];
@@ -50,7 +53,9 @@ async function getProject() {
     .catch((error) => {
       console.log(error);
       snackbar.value?.show(
-        error.response?.data?.message || error.message || "Something went wrong"
+        error.response?.data?.message ||
+          error.message ||
+          "Something went wrong"
       );
     });
 }
@@ -63,7 +68,9 @@ async function getSprints() {
     .catch((error) => {
       console.log(error);
       snackbar.value?.show(
-        error.response?.data?.message || error.message || "Something went wrong"
+        error.response?.data?.message ||
+          error.message ||
+          "Something went wrong"
       );
     });
 }
@@ -107,6 +114,7 @@ async function saveSprint() {
           `${newSprint.value.title} updated`,
           "success"
         );
+
         closeDialog();
         getSprints();
       })
@@ -128,6 +136,7 @@ async function saveSprint() {
           `${count} recurring sprints scheduled`,
           "success"
         );
+
         closeDialog();
         getSprints();
       })
@@ -146,6 +155,7 @@ async function saveSprint() {
           `${newSprint.value.title} created`,
           "success"
         );
+
         closeDialog();
         getSprints();
       })
@@ -160,10 +170,25 @@ async function saveSprint() {
   }
 }
 
-async function deleteSprint(sprint) {
-  if (!confirm(`Delete "${sprint.title}"?`)) {
+// Open the delete confirmation dialog
+function confirmDelete(sprint) {
+  sprintToDelete.value = sprint;
+  deleteDialog.value = true;
+}
+
+// Close the delete confirmation dialog
+function closeDeleteDialog() {
+  deleteDialog.value = false;
+  sprintToDelete.value = null;
+}
+
+// Delete the selected sprint
+async function deleteSprint() {
+  if (!sprintToDelete.value) {
     return;
   }
+
+  const sprint = sprintToDelete.value;
 
   await SprintServices.deleteSprint(sprint.id)
     .then(() => {
@@ -171,10 +196,13 @@ async function deleteSprint(sprint) {
         `${sprint.title} deleted`,
         "success"
       );
+
+      closeDeleteDialog();
       getSprints();
     })
     .catch((error) => {
       console.log(error);
+
       snackbar.value?.show(
         error.response?.data?.message ||
           error.message ||
@@ -212,20 +240,28 @@ function getStatusColor(status) {
 
 <template>
   <v-container v-if="!project">
-    <v-skeleton-loader color="secondary" type="card" />
+    <v-skeleton-loader
+      color="secondary"
+      type="card"
+    />
   </v-container>
 
   <v-container v-else>
+    <!-- Page Header -->
     <div class="d-flex align-center justify-space-between mb-4">
       <h4 class="text-h5 font-weight-medium">
         {{ project.title }} — Sprints
       </h4>
 
-      <v-btn color="accent" @click="openCreate()">
+      <v-btn
+        color="accent"
+        @click="openCreate()"
+      >
         + New Sprint
       </v-btn>
     </div>
 
+    <!-- Sprints Table -->
     <v-table class="rounded-lg elevation-5">
       <thead>
         <tr>
@@ -243,7 +279,9 @@ function getStatusColor(status) {
           v-for="sprint in sprints"
           :key="sprint.id"
         >
-          <td>{{ sprint.title }}</td>
+          <td>
+            {{ sprint.title }}
+          </td>
 
           <td>
             {{ formatDate(sprint.startDate) }}
@@ -267,6 +305,7 @@ function getStatusColor(status) {
           </td>
 
           <td>
+            <!-- Edit Button -->
             <v-btn
               size="small"
               variant="text"
@@ -275,11 +314,12 @@ function getStatusColor(status) {
               Edit
             </v-btn>
 
+            <!-- Delete Button -->
             <v-btn
               size="small"
               variant="text"
               color="primary"
-              @click="deleteSprint(sprint)"
+              @click="confirmDelete(sprint)"
             >
               Delete
             </v-btn>
@@ -288,6 +328,7 @@ function getStatusColor(status) {
       </tbody>
     </v-table>
 
+    <!-- Create / Edit Sprint Dialog -->
     <v-dialog
       persistent
       v-model="showDialog"
@@ -295,7 +336,11 @@ function getStatusColor(status) {
     >
       <v-card class="rounded-lg elevation-5">
         <v-card-title class="headline mb-2">
-          {{ editingSprint !== null ? "Edit Sprint" : "Create Sprint" }}
+          {{
+            editingSprint !== null
+              ? "Edit Sprint"
+              : "Create Sprint"
+          }}
         </v-card-title>
 
         <v-card-text>
@@ -328,7 +373,9 @@ function getStatusColor(status) {
                 <template v-slot:activator="{ props }">
                   <v-text-field
                     v-bind="props"
-                    :model-value="formatDate(newSprint.startDate)"
+                    :model-value="
+                      formatDate(newSprint.startDate)
+                    "
                     label="Start Date"
                     prepend-icon="mdi-calendar"
                     readonly
@@ -351,7 +398,9 @@ function getStatusColor(status) {
                 <template v-slot:activator="{ props }">
                   <v-text-field
                     v-bind="props"
-                    :model-value="formatDate(newSprint.endDate)"
+                    :model-value="
+                      formatDate(newSprint.endDate)
+                    "
                     label="Deadline"
                     prepend-icon="mdi-calendar"
                     readonly
@@ -379,7 +428,9 @@ function getStatusColor(status) {
             inset
             color="accent"
             :label="`Recurring: ${
-              newSprint.isRecurring ? 'Yes' : 'No'
+              newSprint.isRecurring
+                ? 'Yes'
+                : 'No'
             }`"
           />
 
@@ -435,8 +486,46 @@ function getStatusColor(status) {
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <!-- Delete Confirmation Dialog -->
+    <v-dialog
+      v-model="deleteDialog"
+      max-width="500"
+    >
+      <v-card class="rounded-lg">
+        <v-card-title class="text-h6">
+          Confirm Delete
+        </v-card-title>
+
+        <v-card-text>
+          Are you sure you want to delete
+          <strong>
+            "{{ sprintToDelete?.title }}"
+          </strong>
+         ?
+        </v-card-text>
+
+        <v-card-actions>
+          <v-spacer />
+
+          <v-btn
+            variant="text"
+            @click="closeDeleteDialog()"
+          >
+            Cancel
+          </v-btn>
+
+          <v-btn
+            color="primary"
+            variant="flat"
+            @click="deleteSprint()"
+          >
+            Delete
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-container>
 
   <SnackBar ref="snackbar" />
 </template>
-
