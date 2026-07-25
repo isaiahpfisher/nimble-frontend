@@ -50,10 +50,6 @@ onMounted(async () => {
   await getProject(projectId);
 });
 
-watch(storyId, async (id) => {
-  await getStory(projectId, id);
-});
-
 async function getStory(projectId, storyId) {
   try {
     const response = await StoryServices.getStory(projectId, storyId);
@@ -165,7 +161,11 @@ async function deleteStory() {
         </div>
 
         <div class="mt-4">
-          <StoryFeed :project-id="projectId" :story-id="storyId" @error="(message) => snackbar.show(message)" />
+          <StoryFeed
+            :project-id="Number(projectId)"
+            :story-id="Number(storyId)"
+            @error="(message) => snackbar.show(message)"
+          />
         </div>
       </v-col>
       <v-col cols="3">

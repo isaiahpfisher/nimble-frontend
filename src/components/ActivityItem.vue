@@ -1,123 +1,178 @@
 <script setup>
-import { useRouter } from "vue-router";
-import { formatDate } from "../utils/date.js";
-import ActivityServices from "../services/ActivityServices.js";
-import { initials, SUBJECT_TYPE, RELATION_DIRECTION, ACTIVITY_ACTION } from "../utils/activity.js";
+import { computed, ref } from "vue";
+import {
+  initials,
+  fieldLabel,
+  changeValue,
+  ACTION_META,
+  SUBJECT_TYPE,
+  RELATION_DIRECTION,
+  ACTIVITY_ACTION,
+} from "../utils/activity.js";
 import { format, formatDistanceToNow } from "date-fns";
 import DOMPurify from "dompurify";
 
 const props = defineProps({
   activity: { type: Object, required: true },
+  projectId: { type: [Number, String], required: true },
 });
 
-const emit = defineEmits(["error"]);
+const metadata = computed(() => props.activity.metadata ?? {});
 
-function renderContent(content) {
-  return DOMPurify.sanitize(content ?? "");
-}
+const author = computed(() =>
+  props.activity.user
+    ? `${props.activity.user.firstName} ${props.activity.user.lastName}`
+    : (metadata.value.user ?? "Unknown user"),
+);
 
-const router = useRouter();
+const action = computed(() => ACTION_META[props.activity.action] ?? ACTION_META[ACTIVITY_ACTION.UPDATED]);
+
+const summary = computed(() => {
+  const created = props.activity.action === ACTIVITY_ACTION.CREATED;
+  const deleted = props.activity.action === ACTIVITY_ACTION.DELETED;
+
+  if (props.activity.subjectType === SUBJECT_TYPE.STORY) {
+    return created ? "created this story" : deleted ? "deleted this story" : "updated this story";
+  }
+
+  if (props.activity.subjectType === SUBJECT_TYPE.ACCEPTANCE_CRITERIA) {
+    return `${created ? "added" : deleted ? "deleted" : "updated"} acceptance criteria`;
+  }
+
+  if (props.activity.subjectType === SUBJECT_TYPE.COMMENT) {
+    const onCriteria = metadata.value.subjectType !== SUBJECT_TYPE.STORY;
+    const verb = created ? "commented" : "deleted a comment";
+    return onCriteria ? `${verb} on acceptance criteria` : verb;
+  }
+
+  if (props.activity.subjectType === SUBJECT_TYPE.RELATION) {
+    const incoming = metadata.value.direction === RELATION_DIRECTION.INCOMING;
+    if (created) {
+      return incoming ? "linked this story to" : "added a relation to";
+    }
+    return incoming ? "unlinked this story from" : "removed the relation to";
+  }
+
+  return props.activity.action;
+});
+
+const subject = computed(() => {
+  if (props.activity.subjectType === SUBJECT_TYPE.ACCEPTANCE_CRITERIA) {
+    return {
+      text: metadata.value.title,
+      icon: "mdi-check-circle-outline",
+    };
+  }
+
+  if (props.activity.subjectType === SUBJECT_TYPE.COMMENT) {
+    return metadata.value.subjectType === SUBJECT_TYPE.STORY
+      ? null
+      : {
+          text: metadata.value.subjectLabel,
+          icon: "mdi-check-circle-outline",
+        };
+  }
+
+  if (props.activity.subjectType === SUBJECT_TYPE.RELATION) {
+    return {
+      text: metadata.value.other?.title,
+      icon: "mdi-link-variant",
+      to: {
+        name: "editStory",
+        params: {
+          projectId: props.projectId,
+          storyId: metadata.value.other?.id,
+        },
+      },
+    };
+  }
+
+  return null;
+});
+
+const comment = computed(() =>
+  props.activity.subjectType === SUBJECT_TYPE.COMMENT ? DOMPurify.sanitize(metadata.value.content ?? "") : "",
+);
+
+const changes = computed(() => props.activity.change ?? []);
+
+const expanded = ref(false);
+
+const detailLabel = computed(() => {
+  if (comment.value) {
+    return "comment";
+  }
+  return changes.value.length === 1 ? "1 change" : `${changes.value.length} changes`;
+});
 </script>
 
 <template>
-  <v-list-item class="py-3">
-    <template #prepend>
-      <v-avatar color="accent" size="36">
-        <span class="text-white text-caption font-weight-bold">
-          {{ initials(activity.user, activity.metadata.user) }}
-        </span>
-      </v-avatar>
-    </template>
-    <v-list-item-title class="d-flex align-center ga-2 overflow-visible">
-      <span class="text-body-2 font-weight-medium">
-        {{ activity.user ? activity.user.firstName + " " + activity.user.lastName : activity.metadata.user }}
+  <div class="d-flex ga-3 px-4 py-3">
+    <v-avatar color="accent" size="28">
+      <span class="text-white text-caption font-weight-bold">
+        {{ initials(activity.user, metadata.user) }}
       </span>
-      <span class="text-medium-emphasis text-caption">
+    </v-avatar>
+
+    <div class="d-flex flex-column flex-grow-1" style="min-width: 0">
+      <div class="d-flex align-center ga-2 flex-wrap" style="min-height: 28px">
+        <v-icon :icon="action.icon" :color="action.color" size="18"></v-icon>
+        <span class="text-body-2 font-weight-medium">{{ author }}</span>
+        <span class="text-body-2 text-medium-emphasis">{{ summary }}</span>
+
+        <v-chip v-if="subject?.text" :to="subject.to" :prepend-icon="subject.icon" size="small" label variant="tonal">
+          {{ subject.text }}
+        </v-chip>
+
+        <v-btn
+          v-if="comment || changes.length"
+          :text="detailLabel"
+          :append-icon="expanded ? 'mdi-chevron-up' : 'mdi-chevron-down'"
+          variant="text"
+          size="x-small"
+          color="medium-emphasis"
+          @click="expanded = !expanded"
+        ></v-btn>
+
         <v-tooltip :text="format(activity.createdAt, 'PPpp')">
           <template v-slot:activator="{ props }">
-            <span v-bind="props">{{ formatDistanceToNow(activity.createdAt, { addSuffix: true }) }}</span>
+            <span v-bind="props" class="text-caption text-disabled ml-auto">
+              {{ formatDistanceToNow(activity.createdAt, { addSuffix: true }) }}
+            </span>
           </template>
         </v-tooltip>
-      </span>
-    </v-list-item-title>
-    <div class="text-body-2 mt-1">
-      <template v-if="activity.action === ACTIVITY_ACTION.CREATED">
-        <span v-if="activity.subjectType === SUBJECT_TYPE.STORY">Created this story</span>
+      </div>
 
-        <span v-else-if="activity.subjectType === SUBJECT_TYPE.ACCEPTANCE_CRITERIA">
-          Added acceptance criteria "{{ activity.metadata.title }}" with status of "{{ activity.metadata.status }}."
-        </span>
-
-        <span v-else-if="activity.subjectType === SUBJECT_TYPE.COMMENT">
-          <i class="text-medium-emphasis text-caption">
-            {{
-              activity.metadata.subjectType === SUBJECT_TYPE.STORY
-                ? "Commented"
-                : `Commented on acceptance criteria "${activity.metadata.subjectLabel}"`
-            }}:
-          </i>
+      <v-expand-transition>
+        <div v-if="comment && expanded" class="mb-2">
           <div
-            class="text-body-2 mt-1 comment-content ql-editor"
-            v-html="renderContent(activity.metadata.content)"
+            class="text-body-2 mt-2 pa-3 pb-1 rounded-lg bg-secondary comment-content ql-editor"
+            v-html="comment"
           ></div>
-        </span>
+        </div>
+      </v-expand-transition>
 
-        <span v-else-if="activity.subjectType === SUBJECT_TYPE.RELATION">
-          {{
-            activity.metadata.direction === RELATION_DIRECTION.OUTGOING
-              ? "Added a relation to story"
-              : "Linked this story to"
-          }}
-          "{{ activity.metadata.other.title }}"
-        </span>
-      </template>
-
-      <template v-else-if="activity.action === ACTIVITY_ACTION.DELETED">
-        <span v-if="activity.subjectType === SUBJECT_TYPE.STORY">Deleted this story</span>
-
-        <span v-else-if="activity.subjectType === SUBJECT_TYPE.ACCEPTANCE_CRITERIA">
-          Deleted acceptance criteria "{{ activity.metadata.title }}"
-        </span>
-
-        <span v-else-if="activity.subjectType === SUBJECT_TYPE.COMMENT">
-          <i class="text-medium-emphasis text-caption">
-            {{
-              activity.metadata.subjectType === SUBJECT_TYPE.STORY
-                ? "Deleted comment"
-                : `Deleted comment on acceptance criteria "${activity.metadata.subjectLabel}"`
-            }}:
-          </i>
-          <div
-            class="text-body-2 mt-1 comment-content ql-editor"
-            v-html="renderContent(activity.metadata.content)"
-          ></div>
-        </span>
-
-        <span v-else-if="activity.subjectType === SUBJECT_TYPE.RELATION">
-          {{
-            activity.metadata.direction === RELATION_DIRECTION.OUTGOING
-              ? "Removed a relation to story"
-              : "Unlinked this story from"
-          }}
-          "{{ activity.metadata.other.title }}"
-        </span>
-      </template>
-
-      <template v-else-if="activity.action === ACTIVITY_ACTION.UPDATED">
-        <span v-if="activity.subjectType === SUBJECT_TYPE.STORY">Updated this story</span>
-
-        <span v-else-if="activity.subjectType === SUBJECT_TYPE.ACCEPTANCE_CRITERIA">
-          Updated acceptance criteria "{{ activity.metadata.title }}"
-        </span>
-      </template>
+      <v-expand-transition>
+        <div v-if="changes.length && expanded" class="d-flex flex-wrap ga-2 mt-2">
+          <div v-for="change in changes" :key="change.id" class="d-flex align-center">
+            <v-chip size="small" label variant="tonal" style="max-width: 400px">
+              <span class="mr-1" style="font-weight: 500"> {{ fieldLabel(change.attribute) }}: </span>
+              <span class="text-decoration-line-through mr-1">
+                {{ changeValue(change.oldValue) }}
+              </span>
+              <v-icon icon="mdi-arrow-right" size="10" color="medium-emphasis mr-1"></v-icon>
+              {{ changeValue(change.newValue) }}
+            </v-chip>
+          </div>
+        </div>
+      </v-expand-transition>
     </div>
-  </v-list-item>
+  </div>
 </template>
 
 <style scoped>
 /* wanted to avoid custom css blocks, but seems like the best way to style mention blocks */
 .comment-content.ql-editor {
-  padding: 0;
   min-height: 0;
   overflow: visible;
 }

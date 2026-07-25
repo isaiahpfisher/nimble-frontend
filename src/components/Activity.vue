@@ -1,6 +1,5 @@
 <script setup>
 import { computed, onMounted, ref } from "vue";
-import { useRouter } from "vue-router";
 import ActivityServices from "../services/ActivityServices.js";
 import ActivityItem from "./ActivityItem.vue";
 import { SUBJECT_TYPE_OPTIONS } from "../utils/activity.js";
@@ -12,7 +11,6 @@ const props = defineProps({
 
 const emit = defineEmits(["error"]);
 
-const router = useRouter();
 const activities = ref([]);
 const search = ref("");
 const subjectTypes = ref([]);
@@ -52,8 +50,7 @@ const filteredActivities = computed(() => {
       return true;
     }
 
-    const haystack = `${JSON.stringify(activity)} ${activityToString(activity) ?? ""}`.toLowerCase();
-    return haystack.includes(query);
+    return JSON.stringify(activity).toLowerCase().includes(query);
   });
 });
 
@@ -71,26 +68,23 @@ async function getActivityForStory() {
 <template>
   <v-skeleton-loader v-if="!activities" color="secondary" type="card"></v-skeleton-loader>
   <v-card v-else class="overflow-visible rounded-lg elevation-5">
-    <v-row class="pa-3 ga-2" no-gutters>
+    <v-row class="pa-4" dense>
       <v-col>
         <v-text-field
           v-model="search"
-          label="Search activity"
+          placeholder="Search activity"
           prepend-inner-icon="mdi-magnify"
           density="compact"
           variant="outlined"
           hide-details
           clearable
-          style="min-width: 200px"
         ></v-text-field>
       </v-col>
-    </v-row>
-    <v-row class="pa-3 ga-2" no-gutters>
       <v-col>
         <v-select
           v-model="filteredUsers"
           :items="usersWithActivity"
-          label="User"
+          placeholder="All users"
           density="compact"
           variant="outlined"
           hide-details
@@ -102,7 +96,7 @@ async function getActivityForStory() {
         <v-select
           v-model="subjectTypes"
           :items="SUBJECT_TYPE_OPTIONS"
-          label="Type"
+          placeholder="All types"
           density="compact"
           variant="outlined"
           hide-details
@@ -111,11 +105,14 @@ async function getActivityForStory() {
         ></v-select>
       </v-col>
     </v-row>
-    <v-list bg-color="transparent" v-if="filteredActivities.length" class="py-0">
+
+    <template v-if="filteredActivities.length">
       <template v-for="activity in filteredActivities" :key="activity.id">
-        <ActivityItem :activity="activity" @error="(message) => emit('error', message)" />
+        <v-divider></v-divider>
+        <ActivityItem :activity="activity" :project-id="projectId" @error="(message) => emit('error', message)" />
       </template>
-    </v-list>
-    <div v-else class="text-medium-emphasis text-body-2 pa-4 text-center">No activity found.</div>
+    </template>
+
+    <div v-else class="pb-8 py-2 text-center">No activity found.</div>
   </v-card>
 </template>

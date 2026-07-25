@@ -23,6 +23,61 @@ export const SUBJECT_TYPE_OPTIONS = [
   { title: "Relations", value: SUBJECT_TYPE.RELATION },
 ];
 
+export const ACTION_META = {
+  [ACTIVITY_ACTION.CREATED]: {
+    icon: "mdi-plus-circle-outline",
+    color: "success",
+  },
+  [ACTIVITY_ACTION.UPDATED]: { icon: "mdi-pencil-outline", color: "primary" },
+  [ACTIVITY_ACTION.DELETED]: {
+    icon: "mdi-close-circle-outline",
+    color: "error",
+  },
+};
+
+const FIELD_LABELS = {
+  title: "Title",
+  description: "Description",
+  priority: "Priority",
+  estimate: "Estimate",
+  status: "Status",
+  state: "State",
+  sprint: "Sprint",
+  type: "Type",
+  assignee: "Assignee",
+  reporter: "Reporter",
+  reviewer: "Reviewer",
+  repository: "Repository",
+};
+
+export function fieldLabel(attribute) {
+  return FIELD_LABELS[attribute] ?? attribute;
+}
+
+// changes can hold plain values (title, estimate, ...) or { id, label } rows for associations
+export function changeValue(value) {
+  if (value === null || value === undefined || value === "") {
+    return "(none)";
+  }
+
+  if (typeof value === "object") {
+    return value.label ?? "(none)";
+  }
+
+  // handle rich text values like story descriptions
+  const text = String(value) // convert to string
+    .replace(/<[^>]*>/g, " ") // remove html tags
+    .replace(/\s+/g, " ") // convert newlines to spaces
+    .trim();
+
+  if (!text) {
+    return "(none)";
+  }
+
+  // crop long text
+  return text.length > 60 ? `${text.slice(0, 60)}…` : text;
+}
+
 export function initials(user, rawString) {
   if (user) {
     return `${user.firstName[0]}${user.lastName[0]}`.toUpperCase();
