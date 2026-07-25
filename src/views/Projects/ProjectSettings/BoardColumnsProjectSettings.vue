@@ -53,7 +53,7 @@ async function updateProject() {
       projectId.value,
       project.value,
     );
-    snackbar.value.show("Git branch settings updated successfully!");
+    snackbar.value.show("Settings updated successfully!");
   } catch (error) {
     console.error(error);
     snackbar.value.show(error.response?.data?.message ?? error.message);
@@ -195,9 +195,15 @@ async function handleDrop(event) {
       </h4>
     </div>
 
-    <v-card class="rounded-lg elevation-5 mb-6">
-      <v-card-title class="text-h6">Git Branch Settings</v-card-title>
-      <v-card-text>
+    <v-expansion-panels class="mb-6">
+      <v-expansion-panel
+        elevation="5"
+        class="rounded-lg"
+      >
+        <v-expansion-panel-title class="text-h6"
+          >Automation and Reporting</v-expansion-panel-title
+        >
+        <v-expansion-panel-text>
         <v-row>
           <v-col>
             <v-select
@@ -205,33 +211,50 @@ async function handleDrop(event) {
               :items="storyStates"
               item-title="name"
               item-value="id"
-              label="Choose a state"
-              :hint="`A git branch will be created when a story is moved to ${storyStates.find((s) => s.id == project.branchCreationState)?.name ?? 'this state'}.`"
+              label="Branch Creation State"
+              :hint="`A git branch will be created when a story is moved to ${storyStates.find((s) => s.id == project.branchCreationStateId)?.name ?? 'this state'}.`"
               persistent-hint
               clearable
             ></v-select>
           </v-col>
+        </v-row>
+        <v-row>
           <v-col>
             <v-select
               v-model="project.prReviewStateId"
               :items="storyStates"
               item-title="name"
               item-value="id"
-              label="Choose a state"
-              :hint="`Stories will be moved to ${storyStates.find((s) => s.id == project.prReviewState)?.name ?? 'this state'} when a PR is opened.`"
+              label="PR Review State"
+              :hint="`Stories will be moved to ${storyStates.find((s) => s.id == project.prReviewStateId)?.name ?? 'this state'} when a PR is opened.`"
               persistent-hint
               clearable
             ></v-select>
           </v-col>
         </v-row>
-      </v-card-text>
-      <v-card-actions class="pt-0">
-        <v-spacer></v-spacer>
-        <v-btn variant="flat" color="primary" @click="updateProject()"
-          >Update Git Settings</v-btn
-        >
-      </v-card-actions>
-    </v-card>
+        <v-row>
+          <v-col>
+            <v-select
+              v-model="project.completedStateId"
+              :items="storyStates"
+              item-title="name"
+              item-value="id"
+              label="Completed State"
+              :hint="`Stories will be considered completed when they are moved to ${storyStates.find((s) => s.id == project.completedStateId)?.name ?? 'this state'}.`"
+              persistent-hint
+            ></v-select>
+          </v-col>
+        </v-row>
+          <v-row class="pt-0">
+            <v-col class="d-flex justify-end">
+              <v-btn variant="flat" color="primary" @click="updateProject()"
+                >Update Settings</v-btn
+              >
+            </v-col>
+          </v-row>
+        </v-expansion-panel-text>
+      </v-expansion-panel>
+    </v-expansion-panels>
 
     <v-card class="rounded-lg elevation-5">
       <v-card-title class="text-h6">Story States</v-card-title>
@@ -265,7 +288,33 @@ async function handleDrop(event) {
                   @keyup.enter="saveEditing(element)"
                   @keyup.esc="cancelEditing"
                 ></v-text-field>
-                <span v-else>{{ element.name }}</span>
+                <div v-else class="d-flex align-center flex-wrap ga-2">
+                  <span>{{ element.name }}</span>
+                  <v-chip
+                    v-if="project.branchCreationStateId === element.id"
+                    size="x-small"
+                    color="info"
+                    variant="tonal"
+                    prepend-icon="mdi-source-branch"
+                    >Branch created</v-chip
+                  >
+                  <v-chip
+                    v-if="project.prReviewStateId === element.id"
+                    size="x-small"
+                    color="warning"
+                    variant="tonal"
+                    prepend-icon="mdi-source-pull"
+                    >PR review</v-chip
+                  >
+                  <v-chip
+                    v-if="project.completedStateId === element.id"
+                    size="x-small"
+                    color="success"
+                    variant="tonal"
+                    prepend-icon="mdi-check-circle-outline"
+                    >Completed</v-chip
+                  >
+                </div>
               </template>
 
               <template v-slot:append>

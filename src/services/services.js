@@ -1,10 +1,20 @@
 import axios from "axios";
 
-const ISO_DATE_RE =
+const ISO_DATETIME_RE =
   /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$/;
+const DATE_ONLY_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
 
 function reviveDates(key, value) {
-  if (typeof value === "string" && ISO_DATE_RE.test(value)) {
+  if (typeof value !== "string") {
+    return value;
+  }
+
+  const dateOnly = DATE_ONLY_RE.exec(value);
+  if (dateOnly) {
+    const [, year, month, day] = dateOnly;
+    return new Date(Number(year), Number(month) - 1, Number(day));
+  }
+  if (ISO_DATETIME_RE.test(value)) {
     return new Date(value);
   }
   return value;
