@@ -7,6 +7,7 @@ import ProjectServices from "../../../services/ProjectServices.js";
 import UserServices from "../../../services/UserServices.js";
 import SnackBar from "../../../components/SnackBar.vue";
 import { useRouter } from "vue-router";
+import { isAdmin } from "../../../router/guards.js";
 const router = useRouter();
 
 const route = useRoute();
@@ -90,7 +91,7 @@ async function removeMember(id){
     console.error(error);
     snackbar.value.show(error.response?.data?.message ?? error.message);
   }
-  router.go();
+  getProjectMembers(projectId.value);
 }
 
 async function addManager(id){
@@ -102,7 +103,7 @@ async function addManager(id){
     console.error(error);
     snackbar.value.show(error.response?.data?.message ?? error.message);
   }
-router.go();
+getProjectMembers(projectId.value);
 }
 async function removeManager(id){
   try {
@@ -113,7 +114,7 @@ async function removeManager(id){
     console.error(error);
     snackbar.value.show(error.response?.data?.message ?? error.message);
   }
-router.go();
+getProjectMembers(projectId.value);
 
 }
 
@@ -169,7 +170,7 @@ function checkIfUser(id){
               single-line
             ></v-text-field>
             </v-container>
-            <v-container v-if="userManager">
+            <v-container v-if="(userManager||isAdmin)">
             <v-btn
               class="me-2"
               prepend-icon="mdi-plus"
@@ -182,12 +183,12 @@ function checkIfUser(id){
           </v-toolbar>
         </template>
         <template v-slot:item.action1="{ item }">
-          <v-container v-if="item.isManager == '0'&&userManager&&!checkIfUser(item.userId)">
+          <v-container v-if="item.isManager == '0'&&(userManager||isAdmin)&&!checkIfUser(item.userId)">
             <v-btn @click="addManager(item.id)">
               Add Manager
             </v-btn>
           </v-container>
-          <v-container v-else-if = "userManager&&!checkIfUser(item.userId)">
+          <v-container v-else-if = "(userManager||isAdmin)&&!checkIfUser(item.userId)">
             <v-btn @click="removeManager(item.id)">
               Remove Manager
             </v-btn>

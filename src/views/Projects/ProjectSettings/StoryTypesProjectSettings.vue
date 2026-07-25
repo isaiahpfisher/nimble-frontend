@@ -79,6 +79,7 @@ async function saveAdding() {
     snackbar.value.show(error.response?.data?.message ?? error.message);
   } finally {
     cancelAdding();
+    getStoryTypes(projectId.value);
   }
 }
 
