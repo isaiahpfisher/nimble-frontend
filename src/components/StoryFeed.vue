@@ -61,13 +61,7 @@ const tabs = [
             :story-id="storyId"
             @error="(message) => emit('error', message)"
           />
-          <Activity
-            v-else
-            embedded
-            :project-id="projectId"
-            :story-id="storyId"
-            @error="(message) => emit('error', message)"
-          />
+          <Activity v-else :project-id="projectId" :story-id="storyId" @error="(message) => emit('error', message)" />
         </v-tabs-window-item>
       </template>
     </v-tabs>

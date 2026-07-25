@@ -86,9 +86,6 @@ const isCommentEmpty = computed(() => {
   return text.length === 0;
 });
 
-// no card chrome of our own when nested inside another card
-const bare = computed(() => props.embedded || !!props.criterionId);
-
 function initials(user) {
   return `${user.firstName[0]}${user.lastName[0]}`.toUpperCase();
 }

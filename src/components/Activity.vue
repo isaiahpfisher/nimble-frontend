@@ -1,172 +1,66 @@
 <script setup>
 import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
-import { QuillEditor, Quill } from "@vueup/vue-quill";
-import { Mention, MentionBlot } from "quill-mention";
-import MarkdownShortcuts from "quill-markdown-shortcuts";
-import MagicUrl from "quill-magic-url";
-import DOMPurify from "dompurify";
-import "@vueup/vue-quill/dist/vue-quill.snow.css";
-import "quill-mention/dist/quill.mention.css";
-import CommentServices from "../services/CommentServices.js";
-import ProjectServices from "../services/ProjectServices.js";
-import { formatDate } from "../utils/date.js";
-
-Quill.register(
-  {
-    "blots/mention": MentionBlot,
-    "modules/mention": Mention,
-    "modules/markdownShortcuts": MarkdownShortcuts,
-    "modules/magicUrl": MagicUrl,
-  },
-  true,
-);
+import ActivityServices from "../services/ActivityServices.js";
+import ActivityItem from "./ActivityItem.vue";
+import { SUBJECT_TYPE_OPTIONS } from "../utils/activity.js";
 
 const props = defineProps({
   projectId: { type: Number, required: true },
   storyId: { type: Number, required: true },
-  criterionId: { type: Number, required: false },
-  embedded: { type: Boolean, default: false }, // rendered inside another card (e.g. StoryFeed tabs)
 });
 
 const emit = defineEmits(["error"]);
 
 const router = useRouter();
-const comments = ref([]);
-const newComment = ref("");
-const user = ref(null);
-
-const mentionMembers = ref([]);
-const editorKey = ref(0); // weird hack to fix editor not clearing after submitting comments
-
-const quillModules = {
-  toolbar: [
-    [{ header: [1, 2, 3, false] }],
-    ["bold", "italic", "underline"],
-    ["link"],
-    [{ list: "ordered" }, { list: "bullet" }],
-  ],
-  markdownShortcuts: {},
-  magicUrl: true,
-  mention: {
-    allowedChars: /^[A-Za-z0-9_\-\s]*$/,
-    mentionDenotationChars: ["@"],
-    dataAttributes: ["id", "value"],
-    positioningStrategy: "fixed",
-    source(searchTerm, renderList) {
-      const term = searchTerm.toLowerCase();
-      const matches = mentionMembers.value.filter((m) => m.value.toLowerCase().includes(term));
-      renderList(matches, searchTerm);
-    },
-  },
-};
-
-function onEditorReady(quill) {
-  quill.root.addEventListener(
-    "keydown",
-    (e) => {
-      if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-        e.preventDefault();
-        e.stopImmediatePropagation();
-        addComment();
-      }
-    },
-    true,
-  );
-}
-
-function renderContent(content) {
-  return DOMPurify.sanitize(content ?? "");
-}
-
-const isCommentEmpty = computed(() => {
-  const text = renderContent(newComment.value)
-    .replace(/<[^>]*>/g, "")
-    .trim();
-  return text.length === 0;
-});
-
-// no card chrome of our own when nested inside another card
-const bare = computed(() => props.embedded || !!props.criterionId);
-
-function initials(user) {
-  return `${user.firstName[0]}${user.lastName[0]}`.toUpperCase();
-}
+const activities = ref([]);
+const search = ref("");
+const subjectTypes = ref([]);
+const filteredUsers = ref([]);
 
 onMounted(async () => {
-  user.value = JSON.parse(localStorage.getItem("user"));
-
-  await getProjectMembers();
-
-  if (!!props.criterionId) {
-    await getCommentsForCriterion();
-  } else {
-    await getCommentsForStory();
-  }
+  await getActivityForStory();
 });
 
-async function getProjectMembers() {
-  try {
-    const response = await ProjectServices.getProject(props.projectId);
-    mentionMembers.value = (response.data.projectMembers ?? [])
-      .filter((m) => !!m.user && m.user.id != user.value?.id)
-      .map((m) => ({
-        id: m.user.id,
-        value: `${m.user.firstName} ${m.user.lastName}`,
-      }));
-  } catch (error) {
-    console.error(error);
-    emit("error", error.response?.data?.message ?? error.message);
-  }
-}
-
-async function getCommentsForStory() {
-  try {
-    const response = await CommentServices.getCommentsForStory(props.projectId, props.storyId);
-    comments.value = response.data;
-  } catch (error) {
-    console.error(error);
-    emit("error", error.response?.data?.message ?? error.message);
-  }
-}
-
-async function getCommentsForCriterion() {
-  try {
-    const response = await CommentServices.getCommentsForCriterion(props.projectId, props.storyId, props.criterionId);
-    comments.value = response.data;
-  } catch (error) {
-    console.error(error);
-    emit("error", error.response?.data?.message ?? error.message);
-  }
-}
-
-async function addComment() {
-  try {
-    if (isCommentEmpty.value) return;
-
-    const content = renderContent(newComment.value);
-    let response;
-
-    if (!!props.criterionId) {
-      response = await CommentServices.createCommentForCriterion(props.projectId, props.storyId, props.criterionId, {
-        content,
-      });
-    } else {
-      response = await CommentServices.createCommentForStory(props.projectId, props.storyId, { content });
+const usersWithActivity = computed(() => {
+  const users = new Set();
+  activities.value.forEach((activity) => {
+    if (activity.user) {
+      users.add(`${activity.user.firstName} ${activity.user.lastName}`);
+    } else if (activity.metadata.user) {
+      users.add(activity.metadata.user);
     }
-    comments.value.push(response.data);
-    newComment.value = "";
-    editorKey.value++; // change key to force editor to remount
-  } catch (error) {
-    console.error(error);
-    emit("error", error.response?.data?.message ?? error.message);
-  }
-}
+  });
+  return Array.from(users);
+});
 
-async function deleteComment(commentId) {
+const filteredActivities = computed(() => {
+  const query = (search.value ?? "").trim().toLowerCase();
+  const types = subjectTypes.value ?? [];
+
+  return activities.value.filter((activity) => {
+    if (types.length && !types.includes(activity.subjectType)) {
+      return false;
+    }
+
+    const username = activity.user ? `${activity.user.firstName} ${activity.user.lastName}` : activity.metadata.user;
+    if (filteredUsers.value.length && !filteredUsers.value.includes(username)) {
+      return false;
+    }
+
+    if (!query) {
+      return true;
+    }
+
+    const haystack = `${JSON.stringify(activity)} ${activityToString(activity) ?? ""}`.toLowerCase();
+    return haystack.includes(query);
+  });
+});
+
+async function getActivityForStory() {
   try {
-    await CommentServices.deleteComment(commentId);
-    comments.value = comments.value.filter((c) => c.id !== commentId);
+    const response = await ActivityServices.getActivityForStory(props.projectId, props.storyId);
+    activities.value = response.data;
   } catch (error) {
     console.error(error);
     emit("error", error.response?.data?.message ?? error.message);
@@ -175,98 +69,53 @@ async function deleteComment(commentId) {
 </script>
 
 <template>
-  <v-skeleton-loader v-if="!comments || !user" color="secondary" type="card"></v-skeleton-loader>
-  <v-card v-else class="overflow-visible" :class="bare ? 'border-0 elevation-0' : 'rounded-lg elevation-5'">
-    <v-toolbar flat density="compact" color="transparent" class="px-2" v-if="!bare">
-      <v-toolbar-title class="text-subtitle-1 font-weight-medium"> Comments </v-toolbar-title>
-    </v-toolbar>
-    <v-list bg-color="transparent" v-if="comments.length" class="py-0">
-      <template v-for="(comment, index) in comments" :key="comment.id">
-        <v-list-item class="py-3">
-          <template #prepend>
-            <v-avatar color="accent" size="36">
-              <span class="text-white text-caption font-weight-bold">
-                {{ initials(comment.user) }}
-              </span>
-            </v-avatar>
-          </template>
-          <v-list-item-title class="d-flex align-center ga-2 overflow-visible">
-            <span class="text-body-2 font-weight-medium">
-              {{ comment.user.firstName }} {{ comment.user.lastName }}
-            </span>
-            <span class="text-medium-emphasis text-caption">
-              {{ formatDate(comment.createdAt) }}
-            </span>
-            <v-spacer></v-spacer>
-            <v-btn
-              v-if="comment.user.id === user.id"
-              icon="mdi-close"
-              size="x-small"
-              variant="text"
-              class="my-n1"
-              @click="deleteComment(comment.id)"
-            ></v-btn>
-          </v-list-item-title>
-          <div class="text-body-2 mt-1 comment-content ql-editor" v-html="renderContent(comment.content)"></div>
-        </v-list-item>
-        <v-divider v-if="index !== comments.length - 1 && comments.length > 1"></v-divider>
+  <v-skeleton-loader v-if="!activities" color="secondary" type="card"></v-skeleton-loader>
+  <v-card v-else class="overflow-visible rounded-lg elevation-5">
+    <v-row class="pa-3 ga-2" no-gutters>
+      <v-col>
+        <v-text-field
+          v-model="search"
+          label="Search activity"
+          prepend-inner-icon="mdi-magnify"
+          density="compact"
+          variant="outlined"
+          hide-details
+          clearable
+          style="min-width: 200px"
+        ></v-text-field>
+      </v-col>
+    </v-row>
+    <v-row class="pa-3 ga-2" no-gutters>
+      <v-col>
+        <v-select
+          v-model="filteredUsers"
+          :items="usersWithActivity"
+          label="User"
+          density="compact"
+          variant="outlined"
+          hide-details
+          multiple
+          clearable
+        ></v-select>
+      </v-col>
+      <v-col>
+        <v-select
+          v-model="subjectTypes"
+          :items="SUBJECT_TYPE_OPTIONS"
+          label="Type"
+          density="compact"
+          variant="outlined"
+          hide-details
+          multiple
+          clearable
+        ></v-select>
+      </v-col>
+    </v-row>
+    <v-list bg-color="transparent" v-if="filteredActivities.length" class="py-0">
+      <template v-for="activity in filteredActivities" :key="activity.id">
+        <ActivityItem :activity="activity" @error="(message) => emit('error', message)" />
       </template>
     </v-list>
-    <v-divider></v-divider>
-    <div class="pa-3">
-      <QuillEditor
-        :key="editorKey"
-        v-model:content="newComment"
-        content-type="html"
-        @ready="onEditorReady"
-        :options="{
-          placeholder: 'Add a comment — type @ to mention someone',
-          modules: quillModules,
-        }"
-      />
-      <div class="d-flex mt-2">
-        <v-spacer></v-spacer>
-        <v-btn variant="flat" color="primary" :disabled="isCommentEmpty" @click="addComment()">Add Comment</v-btn>
-      </div>
-    </div>
+    <div v-else class="text-medium-emphasis text-body-2 pa-4 text-center">No activity found.</div>
   </v-card>
 </template>
-
-<style scoped>
-/* wanted to avoid custom css blocks, but seems like the best way to style mention blocks */
-.comment-content.ql-editor {
-  padding: 0;
-  min-height: 0;
-  overflow: visible;
-}
-.comment-content :deep(p) {
-  margin: 0;
-}
-
-:deep(.ql-picker-options) {
-  z-index: 10;
-}
-/* customize heading sizes */
-:deep(.ql-editor h1) {
-  font-size: 1.4rem;
-  font-weight: 600;
-  margin: 0.2em 0;
-}
-:deep(.ql-editor h2) {
-  font-size: 1.2rem;
-  font-weight: 600;
-  margin: 0.2em 0;
-}
-:deep(.ql-editor h3) {
-  font-size: 1.05rem;
-  font-weight: 600;
-  margin: 0.2em 0;
-}
-.comment-content :deep(.mention) {
-  background-color: rgba(var(--v-theme-primary), 0.12) !important;
-  color: rgb(var(--v-theme-primary)) !important;
-  border-radius: 6px !important;
-  padding: 1px 2px !important;
-  font-weight: 500 !important;
-}
-</style>
