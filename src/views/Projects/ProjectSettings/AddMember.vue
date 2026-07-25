@@ -73,7 +73,7 @@ async function addMember(id){
     console.error(error);
     snackbar.value.show(error.response?.data?.message ?? error.message);
   }
-  router.go();
+  getProjectMembers(projectId.value);
 }
 
 function userIsManager(){
