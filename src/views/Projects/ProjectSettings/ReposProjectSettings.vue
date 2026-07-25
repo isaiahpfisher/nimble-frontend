@@ -177,6 +177,14 @@ async function deleteRepository(id) {
         No repositories connected to this project.
       </v-card-text>
     </v-card>
+
+    <div class="mb-6">
+      <div class="text-overline text-medium-emphasis mb-1">
+        {{ project.title }} · Project Settings
+      </div>
+      <h4 class="pl-0 text-h5 font-weight-medium">Git Repositories</h4>
+    </div>
+
   </v-container>
 
   <SnackBar ref="snackbar" />
