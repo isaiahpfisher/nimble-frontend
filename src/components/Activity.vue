@@ -26,7 +26,7 @@ const props = defineProps({
   projectId: { type: Number, required: true },
   storyId: { type: Number, required: true },
   criterionId: { type: Number, required: false },
-  embedded: { type: Boolean, default: false },
+  embedded: { type: Boolean, default: false }, // rendered inside another card (e.g. StoryFeed tabs)
 });
 
 const emit = defineEmits(["error"]);
@@ -176,8 +176,8 @@ async function deleteComment(commentId) {
 
 <template>
   <v-skeleton-loader v-if="!comments || !user" color="secondary" type="card"></v-skeleton-loader>
-  <v-card v-else class="overflow-visible border-0 elevation-0">
-    <v-toolbar flat density="compact" color="transparent" class="px-2" v-if="!!props.criterionId">
+  <v-card v-else class="overflow-visible" :class="bare ? 'border-0 elevation-0' : 'rounded-lg elevation-5'">
+    <v-toolbar flat density="compact" color="transparent" class="px-2" v-if="!bare">
       <v-toolbar-title class="text-subtitle-1 font-weight-medium"> Comments </v-toolbar-title>
     </v-toolbar>
     <v-list bg-color="transparent" v-if="comments.length" class="py-0">
