@@ -61,11 +61,11 @@ async function createRepository() {
         repository
       );
 
-      snackbar.value.show("Repository updated successfully.");
+      snackbar.value.show("Repository updated successfully.","green");
     } else {
       await RepositoryServices.create(projectId.value, repository);
 
-      snackbar.value.show("Repository connected successfully.");
+      snackbar.value.show("Repository connected successfully.","green");
     }
 
     githubId.value = "";
@@ -93,7 +93,7 @@ async function deleteRepository(id) {
 
     await getRepositories(projectId.value);
 
-    snackbar.value.show("Repository deleted successfully.");
+    snackbar.value.show("Repository deleted successfully.","green");
   } catch (error) {
     console.error(error);
     snackbar.value.show(error.response?.data?.message ?? error.message);
