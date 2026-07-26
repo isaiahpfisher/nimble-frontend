@@ -21,7 +21,7 @@ function reviveDates(key, value) {
 }
 
 var baseurl = "";
-if (process.env.NODE_ENV === "development") {
+if (import.meta.env.DEV) {
   baseurl = "http://localhost/nimbleapi/";
 } else {
   baseurl = "/nimbleapi/";

@@ -1,0 +1,17 @@
+# Codecov is here to report, not to gate. "informational" means the project and
+# patch checks always post a passing state and just carry the numbers, so a
+# coverage dip shows up as information on the PR instead of a red X.
+coverage:
+  status:
+    project:
+      default:
+        informational: true
+    patch:
+      default:
+        informational: true
+
+comment:
+  layout: "reach, diff, files"
+  behavior: default
+  # Comment on every PR, including ones that do not move coverage.
+  require_changes: false

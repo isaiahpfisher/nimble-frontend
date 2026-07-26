@@ -183,9 +183,9 @@ function checkIfUser(id) {
           </v-container>
         </template>
         <template v-slot:item.action="{ item }">
-          <v-containter v-if="!checkIfUser(item.userId) && (userManager || isAdmin)">
+          <v-container v-if="!checkIfUser(item.userId) && (userManager || isAdmin)">
             <v-btn @click="removeMember(item.id)"> Remove </v-btn>
-          </v-containter>
+          </v-container>
         </template>
       </v-data-table>
     </v-card>

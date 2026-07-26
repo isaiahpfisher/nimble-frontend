@@ -4,7 +4,10 @@
   "scripts": {
     "dev": "cross-env APP_ENV=development vite",
     "build": "cross-env APP_ENV=production vite build",
-    "preview": "cross-env vite preview"
+    "preview": "cross-env vite preview",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@mdi/font": "^7.0.96",
@@ -33,8 +36,12 @@
   "devDependencies": {
     "@mdi/js": "^7.0.96",
     "@vitejs/plugin-vue": "^5.0.4",
+    "@vitest/coverage-v8": "^4.1.10",
+    "@vue/test-utils": "^2.4.11",
+    "jsdom": "^29.1.1",
     "vite": "^5.2.11",
     "vite-plugin-vuetify": "^2.0.3",
+    "vitest": "^4.1.10",
     "vue-cli-plugin-vuetify": "~2.5.8"
   },
   "type": "module"
