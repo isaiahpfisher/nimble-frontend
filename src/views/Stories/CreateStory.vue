@@ -137,13 +137,15 @@ async function createStory() {
             ></v-autocomplete>
           </v-col>
           <v-col class="px-2">
-            <v-autocomplete
-              v-model="story.sprintId"
-              :items="project.sprint"
-              item-title="name"
-              item-value="id"
-              label="Sprint"
-            ></v-autocomplete>
+            <v-col class="px-2">
+  <v-autocomplete
+    v-model="story.sprintId"
+    :items="project.sprint"
+    item-title="title"
+    item-value="id"
+    label="Sprint"
+  ></v-autocomplete>
+</v-col>
           </v-col>
         </v-row>
         <v-row no-gutters>

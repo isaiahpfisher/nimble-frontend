@@ -56,7 +56,7 @@ const sprintOptions = computed(() =>
   removeDuplicatesAndSort(
     stories.value?.map((story) => ({
       value: story.sprint?.id,
-      label: story.sprint?.name,
+      label: story.sprint?.title,
     })),
   ),
 );
@@ -94,7 +94,7 @@ const headers = [
         ? `${item.assignee.firstName} ${item.assignee.lastName}`
         : "",
   },
-  { title: "Sprint", key: "sprint.name" },
+  { title: "Sprint", key: "sprint.title" },
   { title: "Type", key: "type.name" },
   { title: "Priority", key: "priority" },
   { title: "", key: "actions", sortable: false, align: "end" },

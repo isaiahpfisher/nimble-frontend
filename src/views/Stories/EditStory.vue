@@ -253,13 +253,13 @@ async function deleteStory() {
               density="compact"
             ></v-autocomplete>
             <v-autocomplete
-              v-model="story.sprintId"
-              :items="project.sprint"
-              item-title="name"
-              item-value="id"
-              label="Sprint"
-              density="compact"
-            ></v-autocomplete>
+  v-model="story.sprintId"
+  :items="project.sprint"
+  item-title="title"
+  item-value="id"
+  label="Sprint"
+  density="compact"
+></v-autocomplete>
             <v-autocomplete
               v-model="story.repositoryId"
               item-title="name"
