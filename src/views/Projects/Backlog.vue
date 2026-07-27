@@ -46,7 +46,7 @@ async function getSprints(projectId) {
 
 function openAssignSprint(story) {
   selectedStory.value = story;
-  selectedSprint.value = story.sprintId ?? null;
+  selectedSprint.value = null;
   assignSprintDialog.value = true;
 }
 
@@ -58,19 +58,15 @@ async function assignSprint() {
   assigning.value = true;
 
   try {
-    const response = await BacklogServices.assignSprint(
+    await BacklogServices.assignSprint(
       projectId,
       selectedStory.value.id,
       selectedSprint.value,
     );
 
-    const index = stories.value.findIndex(
-      (story) => story.id === selectedStory.value.id,
+    stories.value = stories.value.filter(
+      (story) => story.id !== selectedStory.value.id,
     );
-
-    if (index !== -1) {
-      stories.value[index] = response.data;
-    }
 
     snackbar.value.show(
       `${selectedStory.value.title} assigned to sprint`,
@@ -171,6 +167,9 @@ function goToSprintPage() {
 
         <div v-if="stories.length === 0" class="empty-state">
           <div class="text-h6">No stories in backlog</div>
+          <div class="text-medium-emphasis">
+            There are no not-started stories in the backlog.
+          </div>
         </div>
       </div>
     </v-card>
