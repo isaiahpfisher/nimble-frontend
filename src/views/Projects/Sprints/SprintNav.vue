@@ -10,7 +10,7 @@ const sprintId = ref(route.params.sprintId);
 const sprint = ref(null);
 
 onMounted(async () => {
-  getSprint(projectId.value);
+  getSprint(sprintId.value);
 });
 
 async function getSprint(id) {
