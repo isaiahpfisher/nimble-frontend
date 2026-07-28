@@ -11,7 +11,7 @@ import SnackBar from "../../components/SnackBar.vue";
 import StoryRelations from "../../components/StoryRelations.vue";
 import StoryAcceptanceCriteria from "../../components/StoryAcceptanceCriteria.vue";
 import { useRouter, useRoute } from "vue-router";
-import Comments from "../../components/Comments.vue";
+import StoryFeed from "../../components/StoryFeed.vue";
 
 const router = useRouter();
 const route = useRoute();
@@ -50,10 +50,6 @@ onMounted(async () => {
   await getProject(projectId);
 });
 
-watch(storyId, async (id) => {
-  await getStory(projectId, id);
-});
-
 async function getStory(projectId, storyId) {
   try {
     const response = await StoryServices.getStory(projectId, storyId);
@@ -75,8 +71,7 @@ async function getProject(id) {
 }
 
 async function updateStory() {
-  const { acceptanceCriteria, relationOne, relationTwo, ...newStoryInfo } =
-    story.value;
+  const { acceptanceCriteria, relationOne, relationTwo, ...newStoryInfo } = story.value;
 
   newStoryInfo.description = DOMPurify.sanitize(newStoryInfo.description ?? "");
 
@@ -111,9 +106,7 @@ async function deleteStory() {
       <v-toolbar-title class="text-h5 font-weight-medium">
         {{ story.title }}
       </v-toolbar-title>
-      <v-btn variant="flat" color="primary" @click="updateStory()"
-        >Update Story</v-btn
-      >
+      <v-btn variant="flat" color="primary" @click="updateStory()">Update Story</v-btn>
       <v-menu>
         <template v-slot:activator="{ props }">
           <v-btn icon="mdi-dots-vertical" variant="text" v-bind="props"></v-btn>
@@ -135,10 +128,7 @@ async function deleteStory() {
           <v-card-text>
             <v-row no-gutters>
               <v-col class="px-2">
-                <v-text-field
-                  v-model="story.title"
-                  label="Title"
-                ></v-text-field>
+                <v-text-field v-model="story.title" label="Title"></v-text-field>
               </v-col>
             </v-row>
             <v-row no-gutters>
@@ -159,11 +149,7 @@ async function deleteStory() {
         </v-card>
 
         <div class="mt-4">
-          <StoryRelations
-            :project-id="projectId"
-            :story-id="storyId"
-            @error="(message) => snackbar.show(message)"
-          />
+          <StoryRelations :project-id="projectId" :story-id="storyId" @error="(message) => snackbar.show(message)" />
         </div>
 
         <div class="mt-4">
@@ -175,9 +161,9 @@ async function deleteStory() {
         </div>
 
         <div class="mt-4">
-          <Comments
-            :project-id="projectId"
-            :story-id="storyId"
+          <StoryFeed
+            :project-id="Number(projectId)"
+            :story-id="Number(storyId)"
             @error="(message) => snackbar.show(message)"
           />
         </div>
@@ -255,7 +241,7 @@ async function deleteStory() {
             <v-autocomplete
               v-model="story.sprintId"
               :items="project.sprint"
-              item-title="name"
+              item-title="title"
               item-value="id"
               label="Sprint"
               density="compact"
@@ -277,16 +263,11 @@ async function deleteStory() {
   <v-dialog v-model="confirmDelete" max-width="420">
     <v-card class="rounded-lg">
       <v-card-title class="text-h6">Delete Story</v-card-title>
-      <v-card-text>
-        Are you sure you want to delete "{{ story.title }}"? This action cannot
-        be undone.
-      </v-card-text>
+      <v-card-text> Are you sure you want to delete "{{ story.title }}"? This action cannot be undone. </v-card-text>
       <v-card-actions>
         <v-spacer></v-spacer>
         <v-btn variant="text" @click="confirmDelete = false">Cancel</v-btn>
-        <v-btn variant="flat" color="error" @click="deleteStory()"
-          >Delete</v-btn
-        >
+        <v-btn variant="flat" color="error" @click="deleteStory()">Delete</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>

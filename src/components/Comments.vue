@@ -26,6 +26,7 @@ const props = defineProps({
   projectId: { type: Number, required: true },
   storyId: { type: Number, required: true },
   criterionId: { type: Number, required: false },
+  embedded: { type: Boolean, default: false },
 });
 
 const emit = defineEmits(["error"]);
@@ -54,9 +55,7 @@ const quillModules = {
     positioningStrategy: "fixed",
     source(searchTerm, renderList) {
       const term = searchTerm.toLowerCase();
-      const matches = mentionMembers.value.filter((m) =>
-        m.value.toLowerCase().includes(term),
-      );
+      const matches = mentionMembers.value.filter((m) => m.value.toLowerCase().includes(term));
       renderList(matches, searchTerm);
     },
   },
@@ -120,10 +119,7 @@ async function getProjectMembers() {
 
 async function getCommentsForStory() {
   try {
-    const response = await CommentServices.getCommentsForStory(
-      props.projectId,
-      props.storyId,
-    );
+    const response = await CommentServices.getCommentsForStory(props.projectId, props.storyId);
     comments.value = response.data;
   } catch (error) {
     console.error(error);
@@ -133,11 +129,7 @@ async function getCommentsForStory() {
 
 async function getCommentsForCriterion() {
   try {
-    const response = await CommentServices.getCommentsForCriterion(
-      props.projectId,
-      props.storyId,
-      props.criterionId,
-    );
+    const response = await CommentServices.getCommentsForCriterion(props.projectId, props.storyId, props.criterionId);
     comments.value = response.data;
   } catch (error) {
     console.error(error);
@@ -153,18 +145,11 @@ async function addComment() {
     let response;
 
     if (!!props.criterionId) {
-      response = await CommentServices.createCommentForCriterion(
-        props.projectId,
-        props.storyId,
-        props.criterionId,
-        { content },
-      );
+      response = await CommentServices.createCommentForCriterion(props.projectId, props.storyId, props.criterionId, {
+        content,
+      });
     } else {
-      response = await CommentServices.createCommentForStory(
-        props.projectId,
-        props.storyId,
-        { content },
-      );
+      response = await CommentServices.createCommentForStory(props.projectId, props.storyId, { content });
     }
     comments.value.push(response.data);
     newComment.value = "";
@@ -187,25 +172,10 @@ async function deleteComment(commentId) {
 </script>
 
 <template>
-  <v-skeleton-loader
-    v-if="!comments || !user"
-    color="secondary"
-    type="card"
-  ></v-skeleton-loader>
-  <v-card
-    class="overflow-visible"
-    :class="!criterionId ? 'rounded-lg elevation-5' : 'border-0 elevation-0'"
-  >
-    <v-toolbar
-      flat
-      density="compact"
-      color="transparent"
-      class="px-2"
-      v-if="!criterionId"
-    >
-      <v-toolbar-title class="text-subtitle-1 font-weight-medium">
-        Comments
-      </v-toolbar-title>
+  <v-skeleton-loader v-if="!comments || !user" color="secondary" type="card"></v-skeleton-loader>
+  <v-card v-else class="overflow-visible border-0 elevation-0">
+    <v-toolbar flat density="compact" color="transparent" class="px-2" v-if="!!props.criterionId">
+      <v-toolbar-title class="text-subtitle-1 font-weight-medium"> Comments </v-toolbar-title>
     </v-toolbar>
     <v-list bg-color="transparent" v-if="comments.length" class="py-0">
       <template v-for="(comment, index) in comments" :key="comment.id">
@@ -234,14 +204,9 @@ async function deleteComment(commentId) {
               @click="deleteComment(comment.id)"
             ></v-btn>
           </v-list-item-title>
-          <div
-            class="text-body-2 mt-1 comment-content ql-editor"
-            v-html="renderContent(comment.content)"
-          ></div>
+          <div class="text-body-2 mt-1 comment-content ql-editor" v-html="renderContent(comment.content)"></div>
         </v-list-item>
-        <v-divider
-          v-if="index !== comments.length - 1 && comments.length > 1"
-        ></v-divider>
+        <v-divider v-if="index !== comments.length - 1 && comments.length > 1"></v-divider>
       </template>
     </v-list>
     <v-divider></v-divider>
@@ -258,13 +223,7 @@ async function deleteComment(commentId) {
       />
       <div class="d-flex mt-2">
         <v-spacer></v-spacer>
-        <v-btn
-          variant="flat"
-          color="primary"
-          :disabled="isCommentEmpty"
-          @click="addComment()"
-          >Add Comment</v-btn
-        >
+        <v-btn variant="flat" color="primary" :disabled="isCommentEmpty" @click="addComment()">Add Comment</v-btn>
       </div>
     </div>
   </v-card>

@@ -140,7 +140,7 @@ async function createStory() {
             <v-autocomplete
               v-model="story.sprintId"
               :items="project.sprint"
-              item-title="name"
+              item-title="title"
               item-value="id"
               label="Sprint"
             ></v-autocomplete>
@@ -190,9 +190,7 @@ async function createStory() {
       </v-card-text>
       <v-card-actions class="pt-0">
         <v-spacer></v-spacer>
-        <v-btn variant="flat" color="primary" @click="createStory()"
-          >Create Story</v-btn
-        >
+        <v-btn variant="flat" color="primary" @click="createStory()">Create Story</v-btn>
       </v-card-actions>
     </v-card>
   </v-container>

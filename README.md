@@ -1,5 +1,7 @@
 # Nimble Frontend with Vue 3
 
+[![codecov](https://codecov.io/gh/isaiahpfisher/nimble-frontend/branch/dev/graph/badge.svg)](https://codecov.io/gh/isaiahpfisher/nimble-frontend/branch/dev)
+
 Please visit https://github.com/isaiahpfisher/nimble-backend for the backend repository.
 
 ## Project Setup
@@ -39,3 +41,17 @@ npm run build
 ```
 npm run lint
 ```
+
+## Testing
+
+The suite runs on [Vitest](https://vitest.dev) with [Vue Test Utils](https://test-utils.vuejs.org), and runs automatically on every pull request.
+
+```
+npm test           # watch mode
+npm run test:run   # single run
+npm run test:coverage
+```
+
+`src/test/pages.spec.js` is a smoke suite: it mounts every page in the router and checks that it renders real content without logging errors. The API is stubbed at a single point — the `apiClient` in `src/services/services.js` — with the canned responses in `src/test/fixtures.js`. A page that requests a URL with no fixture fails with a message naming the URL to add.
+
+When you add a route, add it to the `PAGES` table in that spec; a coverage test fails if a route has no smoke test.
