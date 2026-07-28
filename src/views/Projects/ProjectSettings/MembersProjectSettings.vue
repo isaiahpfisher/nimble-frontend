@@ -13,27 +13,28 @@ const route = useRoute();
 
 const user = ref(null);
 const users = ref(null);
-var userManager = false;
+const userManager = ref(false);
 var userId = ref(null);
+const isAdmin = ref(false);
 const projectId = ref(route.params.id);
-const projectMemberNonManager = {isManager: "0",  "userId": ref(null),   "projectId": ref(null)};
-const projectMemberManager = {isManager: "1",  "userId": ref(null),   "projectId": ref(null)};
+const projectMemberNonManager = { isManager: "0", userId: ref(null), projectId: ref(null) };
+const projectMemberManager = { isManager: "1", userId: ref(null), projectId: ref(null) };
 const projectMembers = ref(null);
 const project = ref(null);
 const snackbar = ref(null);
 const search = ref("");
 const headers = [
-  { title: 'Name', key: 'name', value: (item) => getUsername(item.userId)},
-  { title: 'Role', key: 'isManager', value: (item) => item.isManager==1 ? 'Manager' : 'Member' },
-  { title: 'Change Role', value: 'action1'},
-  { title: 'Remove' , value: 'action'},
-]
-
+  { title: "Name", key: "name", value: (item) => getUsername(item.userId) },
+  { title: "Role", key: "isManager", value: (item) => (item.isManager == 1 ? "Manager" : "Member") },
+  { title: "Change Role", value: "action1" },
+  { title: "Remove", value: "action" },
+];
 
 onMounted(async () => {
   user.value = JSON.parse(localStorage.getItem("user"));
   userId = user.value.id;
-  getUsers()
+  isAdmin.value = user.value?.isAdmin;
+  getUsers();
   getProject(projectId.value);
 });
 
@@ -47,17 +48,17 @@ async function getProject(id) {
   }
 }
 
-function getUsername(id){
+function getUsername(id) {
   var username = "";
-  for(var i = 0; i < users.value.length; i++){
-    if(users.value[i].id == id){
+  for (var i = 0; i < users.value.length; i++) {
+    if (users.value[i].id == id) {
       username = users.value[i].firstName + " " + users.value[i].lastName;
     }
   }
   return username;
 }
 
-function leavepage(){
+function leavepage() {
   router.push({ name: "addMember" });
 }
 
@@ -83,17 +84,17 @@ async function getProjectMembers(id) {
   }
 }
 
-async function removeMember(id){
-    try {
+async function removeMember(id) {
+  try {
     await ProjectMemberServices.deleteProjectMember(id);
   } catch (error) {
     console.error(error);
     snackbar.value.show(error.response?.data?.message ?? error.message);
   }
-  router.go();
+  getProjectMembers(projectId.value);
 }
 
-async function addManager(id){
+async function addManager(id) {
   try {
     projectMemberManager.userId = id;
     projectMemberManager.projectId = projectId.value;
@@ -102,9 +103,9 @@ async function addManager(id){
     console.error(error);
     snackbar.value.show(error.response?.data?.message ?? error.message);
   }
-router.go();
+  getProjectMembers(projectId.value);
 }
-async function removeManager(id){
+async function removeManager(id) {
   try {
     projectMemberNonManager.userId = id;
     projectMemberNonManager.projectId = projectId.value;
@@ -113,26 +114,20 @@ async function removeManager(id){
     console.error(error);
     snackbar.value.show(error.response?.data?.message ?? error.message);
   }
-router.go();
-
+  getProjectMembers(projectId.value);
 }
 
-
-function userIsManager(){
-    for(var i = 0; i < projectMembers.value.length; i++){
-    if(projectMembers.value[i].userId == user.value.id){
-      userManager = true;
+function userIsManager() {
+  for (var i = 0; i < projectMembers.value.length; i++) {
+    if (projectMembers.value[i].userId == user.value.id && projectMembers.value[i].isManager == "1") {
+      userManager.value = true;
     }
-    console.log(user.value.id);
   }
 }
 
-function checkIfUser(id){
-  console.log(id+" vs "+user.value.id)
+function checkIfUser(id) {
   return user.value.id == id;
 }
-
-
 </script>
 
 <template>
@@ -141,9 +136,7 @@ function checkIfUser(id){
   </v-container>
   <v-container v-else>
     <div class="mb-6">
-      <div class="text-overline text-medium-emphasis mb-1">
-        {{ project.title }} · Project Settings
-      </div>
+      <div class="text-overline text-medium-emphasis mb-1">{{ project.title }} · Project Settings</div>
       <h4 class="pl-0 text-h5 font-weight-medium">Team Members</h4>
     </div>
     <v-card variant="flat" border rounded="lg">
@@ -157,51 +150,42 @@ function checkIfUser(id){
           <v-toolbar flat>
             <v-toolbar-title> Project Members </v-toolbar-title>
             <v-container>
-            <v-text-field
-              v-model="search"
-              class="me-2"
-              density="compact"
-              label="Search"
-              prepend-inner-icon="mdi-magnify"
-              variant="solo-filled"
-              flat
-              hide-details
-              single-line
-            ></v-text-field>
+              <v-text-field
+                v-model="search"
+                class="me-2"
+                density="compact"
+                label="Search"
+                prepend-inner-icon="mdi-magnify"
+                variant="solo-filled"
+                flat
+                hide-details
+                single-line
+              ></v-text-field>
             </v-container>
-            <v-container v-if="userManager">
-            <v-btn
-              class="me-2"
-              prepend-icon="mdi-plus"
-              rounded="lg"
-              alignment="right"
-              text="Add Member"
-              @click="leavepage()"
-            ></v-btn>
+            <v-container v-if="userManager || isAdmin">
+              <v-btn
+                class="me-2"
+                prepend-icon="mdi-plus"
+                rounded="lg"
+                alignment="right"
+                text="Add Member"
+                @click="leavepage()"
+              ></v-btn>
             </v-container>
           </v-toolbar>
         </template>
         <template v-slot:item.action1="{ item }">
-          <v-container v-if="item.isManager == '0'&&userManager&&!checkIfUser(item.userId)">
-            <v-btn @click="addManager(item.id)">
-              Add Manager
-            </v-btn>
+          <v-container v-if="item.isManager == '0' && (userManager || isAdmin) && !checkIfUser(item.userId)">
+            <v-btn @click="addManager(item.id)"> Add Manager </v-btn>
           </v-container>
-          <v-container v-else-if = "userManager&&!checkIfUser(item.userId)">
-            <v-btn @click="removeManager(item.id)">
-              Remove Manager
-            </v-btn>
-          </v-container>
-          <v-container v-else>
-
+          <v-container v-else-if="item.isManager == '1' && (userManager || isAdmin) && !checkIfUser(item.userId)">
+            <v-btn @click="removeManager(item.id)"> Remove Manager </v-btn>
           </v-container>
         </template>
         <template v-slot:item.action="{ item }">
-          <v-containter v-if = '!checkIfUser(item.userId)'>
-            <v-btn @click="removeMember(item.id)">
-              Remove
-            </v-btn>
-            </v-containter>
+          <v-container v-if="!checkIfUser(item.userId) && (userManager || isAdmin)">
+            <v-btn @click="removeMember(item.id)"> Remove </v-btn>
+          </v-container>
         </template>
       </v-data-table>
     </v-card>

@@ -21,5 +21,23 @@ export default () => {
       port: 8081,
     },
     base: baseURL,
+
+    test: {
+      environment: "jsdom",
+      globals: true,
+      setupFiles: ["./src/test/setup.js"],
+      // Print every page as it is tested rather than a single summary line.
+      reporters: ["verbose"],
+      // Vuetify ships untranspiled ESM that Vitest cannot externalize.
+      server: { deps: { inline: ["vuetify"] } },
+      coverage: {
+        provider: "v8",
+        // lcov is what Codecov reads; text prints a summary in the CI log.
+        reporter: ["text", "lcov"],
+        reportsDirectory: "./coverage",
+        include: ["src/**/*.{js,vue}"],
+        exclude: ["src/test/**", "src/plugins/**", "src/main.js"],
+      },
+    },
   });
 };

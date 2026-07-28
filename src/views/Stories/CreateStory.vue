@@ -137,15 +137,13 @@ async function createStory() {
             ></v-autocomplete>
           </v-col>
           <v-col class="px-2">
-            <v-col class="px-2">
-  <v-autocomplete
-    v-model="story.sprintId"
-    :items="project.sprint"
-    item-title="title"
-    item-value="id"
-    label="Sprint"
-  ></v-autocomplete>
-</v-col>
+            <v-autocomplete
+              v-model="story.sprintId"
+              :items="project.sprint"
+              item-title="title"
+              item-value="id"
+              label="Sprint"
+            ></v-autocomplete>
           </v-col>
         </v-row>
         <v-row no-gutters>
@@ -192,9 +190,7 @@ async function createStory() {
       </v-card-text>
       <v-card-actions class="pt-0">
         <v-spacer></v-spacer>
-        <v-btn variant="flat" color="primary" @click="createStory()"
-          >Create Story</v-btn
-        >
+        <v-btn variant="flat" color="primary" @click="createStory()">Create Story</v-btn>
       </v-card-actions>
     </v-card>
   </v-container>

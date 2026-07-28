@@ -46,7 +46,7 @@ async function getStoryTypes(id) {
 }
 
 function getNumberOfStoriesLabel(type) {
-  if (!type.story.length) return "";
+  if (!type?.story?.length) return "";
   return `${type.story.length} user ${
     type.story.length === 1 ? "story" : "stories"
   }`;
@@ -73,12 +73,14 @@ async function saveAdding() {
       name: editName.value.trim(),
     });
     storyTypes.value.push(response.data);
+    await getStoryTypes(projectId.value);
     snackbar.value.show("Story type created successfully!");
   } catch (error) {
     console.error(error);
     snackbar.value.show(error.response?.data?.message ?? error.message);
   } finally {
     cancelAdding();
+    getStoryTypes(projectId.value);
   }
 }
 
@@ -160,7 +162,9 @@ async function deleteStoryType(type) {
           v-for="(type, index) in storyTypes"
           :key="type.id"
           :subtitle="getNumberOfStoriesLabel(type)"
-          :class="{ 'border-b': index < storyTypes.length - 1 || editingId === -1 }"
+          :class="{
+            'border-b': index < storyTypes.length - 1 || editingId === -1,
+          }"
         >
           <template v-slot:prepend>
             <v-btn

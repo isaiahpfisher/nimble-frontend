@@ -52,10 +52,7 @@ onMounted(async () => {
 
 async function getStory() {
   try {
-    const response = await StoryServices.getStory(
-      props.projectId,
-      props.storyId,
-    );
+    const response = await StoryServices.getStory(props.projectId, props.storyId);
     story.value = response.data;
   } catch (error) {
     console.error(error);
@@ -94,9 +91,7 @@ const relationOptions = computed(() => {
 const relations = computed(() => {
   const format = (relation, otherStory, isInverse) => ({
     id: relation.id,
-    label: isInverse
-      ? relationTypes[relation.type]?.inverse
-      : relationTypes[relation.type]?.forward,
+    label: isInverse ? relationTypes[relation.type]?.inverse : relationTypes[relation.type]?.forward,
     color: relationTypes[relation.type]?.color,
     icon: relationTypes[relation.type]?.icon,
     otherStory,
@@ -143,11 +138,7 @@ async function saveRelation() {
       : { type, storyOneId: props.storyId, storyTwoId: otherId };
 
   try {
-    await RelationServices.createRelation(
-      props.projectId,
-      props.storyId,
-      relationInfo,
-    );
+    await RelationServices.createRelation(props.projectId, props.storyId, relationInfo);
     dialog.value = false;
     draftRelation.value = null;
     await getStory();
@@ -159,11 +150,7 @@ async function saveRelation() {
 
 async function removeRelation(relationId) {
   try {
-    await RelationServices.deleteRelation(
-      props.projectId,
-      props.storyId,
-      relationId,
-    );
+    await RelationServices.deleteRelation(props.projectId, props.storyId, relationId);
     await getStory();
   } catch (error) {
     console.error(error);
@@ -175,16 +162,8 @@ async function removeRelation(relationId) {
 <template>
   <v-card class="rounded-lg elevation-5">
     <v-toolbar flat density="compact" color="transparent" class="px-2">
-      <v-toolbar-title class="text-subtitle-1 font-weight-medium">
-        Relations
-      </v-toolbar-title>
-      <v-btn
-        prepend-icon="mdi-plus"
-        rounded="lg"
-        text="Add Relation"
-        border
-        @click="addRelation()"
-      ></v-btn>
+      <v-toolbar-title class="text-subtitle-1 font-weight-medium"> Relations </v-toolbar-title>
+      <v-btn prepend-icon="mdi-plus" rounded="lg" text="Add Relation" border @click="addRelation()"></v-btn>
     </v-toolbar>
 
     <v-list bg-color="transparent">
@@ -207,13 +186,7 @@ async function removeRelation(relationId) {
         }"
       >
         <template v-slot:prepend>
-          <v-chip
-            :color="relation.color"
-            :prepend-icon="relation.icon"
-            size="small"
-            label
-            class="mr-3"
-          >
+          <v-chip :color="relation.color" :prepend-icon="relation.icon" size="small" label class="mr-3">
             {{ relation.label }}
           </v-chip>
         </template>
@@ -228,7 +201,7 @@ async function removeRelation(relationId) {
             variant="text"
             size="small"
             color="medium-emphasis"
-            @click.stop="removeRelation(relation.id)"
+            @click.stop.prevent.capture="removeRelation(relation.id)"
           ></v-btn>
         </template>
       </v-list-item>
@@ -239,12 +212,7 @@ async function removeRelation(relationId) {
     <v-card v-if="draftRelation" class="rounded-lg">
       <v-card-title class="text-h6">Add Relation</v-card-title>
       <v-card-text>
-        <v-select
-          v-model="draftRelation.option"
-          :items="relationOptions"
-          label="Relation"
-          density="compact"
-        ></v-select>
+        <v-select v-model="draftRelation.option" :items="relationOptions" label="Relation" density="compact"></v-select>
         <v-autocomplete
           v-model="draftRelation.otherId"
           :items="relationCandidates"
@@ -257,13 +225,7 @@ async function removeRelation(relationId) {
       <v-card-actions>
         <v-spacer></v-spacer>
         <v-btn variant="text" @click="dialog = false">Cancel</v-btn>
-        <v-btn
-          variant="flat"
-          color="primary"
-          :disabled="!draftRelation.otherId"
-          @click="saveRelation()"
-          >Add</v-btn
-        >
+        <v-btn variant="flat" color="primary" :disabled="!draftRelation.otherId" @click="saveRelation()">Add</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
