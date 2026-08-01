@@ -1,25 +1,26 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
+import { useStore } from "vuex";
 import ocLogo from "/oc_logo.png";
 import UserServices from "../services/UserServices";
 import ProjectServices from "../services/ProjectServices";
 import SnackBar from "./SnackBar.vue";
 import { useRoute } from "vue-router";
+import Assistant from "./Assistant.vue";
 
 const router = useRouter();
 const route = useRoute();
+const store = useStore();
 const title = ref("Nimble");
 const snackbar = ref(null);
 
+const toggleAssistant = () => store.commit("assistant/TOGGLE_OPEN");
+
 // User stuff
 const user = ref(null);
-const fullName = computed(() =>
-  user.value ? `${user.value.firstName} ${user.value.lastName}` : "",
-);
-const initials = computed(() =>
-  user.value ? `${user.value.firstName[0]}${user.value.lastName[0]}` : "",
-);
+const fullName = computed(() => (user.value ? `${user.value.firstName} ${user.value.lastName}` : ""));
+const initials = computed(() => (user.value ? `${user.value.firstName[0]}${user.value.lastName[0]}` : ""));
 
 onMounted(async () => {
   user.value = JSON.parse(localStorage.getItem("user"));
@@ -51,27 +52,19 @@ const projects = ref([]); // current user's projects
 const selectedProject = ref(null);
 
 // to make sure we don't use the :id route param for other tables
-const isProjectRoute = computed(() =>
-  route.matched.some((r) => r.path.startsWith("/projects/")),
-);
-const routeProjectId = computed(() =>
-  isProjectRoute.value ? Number(route.params.id) || null : null,
-);
+const isProjectRoute = computed(() => route.matched.some((r) => r.path.startsWith("/projects/")));
+const routeProjectId = computed(() => (isProjectRoute.value ? Number(route.params.id) || null : null));
 
 // An admin can open a project they don't belong to/
 // We need to check that to render things differently for admins.
 const isAdminViewing = computed(
   () =>
-    routeProjectId.value != null &&
-    user.value?.isAdmin &&
-    !projects.value.some((p) => p.id === routeProjectId.value),
+    routeProjectId.value != null && user.value?.isAdmin && !projects.value.some((p) => p.id === routeProjectId.value),
 );
 
 // inject projectId into route
 function projectRoute(name = "projectBoard") {
-  return selectedProject.value
-    ? { name, params: { id: selectedProject.value.id } }
-    : { name: "home" };
+  return selectedProject.value ? { name, params: { id: selectedProject.value.id } } : { name: "home" };
 }
 
 async function loadProjects() {
@@ -100,8 +93,7 @@ async function loadProjects() {
   } else {
     // No project in the route → restore the last selected member project.
     const savedId = Number(localStorage.getItem("selectedProjectId"));
-    selectedProject.value =
-      projects.value.find((p) => p.id === savedId) ?? projects.value[0] ?? null;
+    selectedProject.value = projects.value.find((p) => p.id === savedId) ?? projects.value[0] ?? null;
     if (selectedProject.value) {
       localStorage.setItem("selectedProjectId", selectedProject.value.id);
     }
@@ -137,6 +129,7 @@ const adminItems = ref([
 </script>
 
 <template>
+  <Assistant />
   <v-app-bar color="primary" app dark>
     <router-link :to="projectRoute()">
       <v-img class="mx-2" :src="ocLogo" height="50" width="50" contain></v-img>
@@ -164,6 +157,16 @@ const adminItems = ref([
       :to="{ name: 'createStory', params: { id: selectedProject.id } }"
     >
       New Story
+    </v-btn>
+    <v-btn
+      v-if="user !== null"
+      class="mr-4"
+      variant="tonal"
+      color="white"
+      prepend-icon="mdi-creation"
+      @click="toggleAssistant"
+    >
+      Assistant
     </v-btn>
   </v-app-bar>
 
@@ -217,11 +220,7 @@ const adminItems = ref([
 
           <v-divider class="my-1"></v-divider>
 
-          <v-list-item
-            prepend-icon="mdi-plus"
-            title="Create Project"
-            @click="createProject"
-          ></v-list-item>
+          <v-list-item prepend-icon="mdi-plus" title="Create Project" @click="createProject"></v-list-item>
         </v-list>
       </v-menu>
     </v-list>
@@ -259,9 +258,7 @@ const adminItems = ref([
             <v-list-item v-bind="props" class="px-2">
               <div class="d-flex align-center">
                 <v-avatar color="accent" size="40">
-                  <span class="text-white font-weight-bold">{{
-                    initials
-                  }}</span>
+                  <span class="text-white font-weight-bold">{{ initials }}</span>
                 </v-avatar>
                 <div class="ml-3">
                   <div class="text-body-2">{{ fullName }}</div>
