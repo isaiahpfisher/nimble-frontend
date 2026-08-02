@@ -67,6 +67,11 @@ export const STORY = {
   relationTwo: [],
 };
 
+// Stories the backlog view lists: not started, so not yet on a sprint.
+export const BACKLOG = [
+  { ...STORY, id: 6, title: "Backlog story title", sprintId: null, sprint: null },
+];
+
 export const SPRINT = {
   id: 2,
   projectId: 1,
@@ -106,6 +111,8 @@ const ROUTES = [
   [/^projects\/\d+\/stories\/\d+\/relations(\/\d+)?$/, {}],
   [/^projects\/\d+\/storyStates(\/(\d+|reorder))?$/, STORY_STATES],
   [/^projects\/\d+\/storyTypes(\/\d+)?$/, STORY_TYPES],
+  [/^projects\/\d+\/backlog$/, BACKLOG],
+  [/^projects\/\d+\/backlog\/\d+\/sprint$/, {}],
   [/^projects\/\d+\/sprints$/, SPRINTS],
   [/^projects\/\d+\/repositories\/?$/, REPOSITORIES],
 

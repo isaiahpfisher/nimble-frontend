@@ -2,6 +2,7 @@
 import { onMounted } from "vue";
 import { ref } from "vue";
 import BacklogServices from "../../services/BacklogServices.js";
+import ProjectServices from "../../services/ProjectServices.js";
 import SprintServices from "../../services/SprintServices.js";
 import SnackBar from "../../components/SnackBar.vue";
 import { useRoute, useRouter } from "vue-router";
@@ -10,6 +11,7 @@ const route = useRoute();
 const router = useRouter();
 const projectId = Number(route.params.id);
 
+const project = ref(null);
 const stories = ref(null);
 const sprints = ref([]);
 const snackbar = ref(null);
@@ -20,9 +22,20 @@ const selectedSprint = ref(null);
 const assigning = ref(false);
 
 onMounted(async () => {
+  await getProject(projectId);
   await getBacklogForProject(projectId);
   await getSprints(projectId);
 });
+
+async function getProject(projectId) {
+  try {
+    const response = await ProjectServices.getProject(projectId);
+    project.value = response.data;
+  } catch (error) {
+    console.error(error);
+    snackbar.value.show(error.response?.data?.message ?? error.message);
+  }
+}
 
 async function getBacklogForProject(projectId) {
   try {
@@ -97,11 +110,15 @@ function goToSprintPage() {
 </script>
 
 <template>
-  <v-container v-if="!stories">
+  <v-container v-if="!project || !stories">
     <v-skeleton-loader color="secondary" type="card"></v-skeleton-loader>
   </v-container>
 
   <v-container v-else>
+    <h4 class="pl-0 text-h5 mb-6 font-weight-medium">
+      {{ project.title }} - Backlog
+    </h4>
+
     <v-card variant="flat" border rounded="lg">
       <v-toolbar flat>
         <v-toolbar-title> Backlog </v-toolbar-title>
