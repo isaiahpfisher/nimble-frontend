@@ -1,7 +1,6 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
-import { useStore } from "vuex";
 import ocLogo from "/oc_logo.png";
 import UserServices from "../services/UserServices";
 import ProjectServices from "../services/ProjectServices";
@@ -11,11 +10,9 @@ import Assistant from "./Assistant.vue";
 
 const router = useRouter();
 const route = useRoute();
-const store = useStore();
 const title = ref("Nimble");
 const snackbar = ref(null);
-
-const toggleAssistant = () => store.commit("assistant/TOGGLE_OPEN");
+const assistantOpen = ref(false);
 
 // User stuff
 const user = ref(null);
@@ -129,7 +126,7 @@ const adminItems = ref([
 </script>
 
 <template>
-  <Assistant />
+  <Assistant v-model="assistantOpen" />
   <v-app-bar color="primary" app dark>
     <router-link :to="projectRoute()">
       <v-img class="mx-2" :src="ocLogo" height="50" width="50" contain></v-img>
@@ -164,7 +161,7 @@ const adminItems = ref([
       variant="tonal"
       color="white"
       prepend-icon="mdi-creation"
-      @click="toggleAssistant"
+      @click="assistantOpen = !assistantOpen"
     >
       Assistant
     </v-btn>

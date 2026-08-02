@@ -1,34 +1,101 @@
 <script setup>
-import { ref, computed, watch, nextTick } from "vue";
+import { ref, watch, nextTick } from "vue";
 import { useRouter } from "vue-router";
 import DOMPurify from "dompurify";
 import { marked } from "marked";
-import { useStore } from "vuex";
+import AssistantServices from "../services/AssistantServices.js";
 
 const router = useRouter();
-const store = useStore();
 
-const open = computed({
-  get: () => store.getters["assistant/open"],
-  set: (value) => store.commit("assistant/SET_OPEN", value),
+const greeting = () => ({
+  role: "assistant",
+  content: "Hi! I'm the Nimble assistant. Ask me anything.",
+  local: true,
 });
-const messages = computed(() => store.getters["assistant/messages"]);
-const loading = computed(() => store.getters["assistant/loading"]);
+
+const open = defineModel({ default: false });
+const messages = ref([greeting()]);
+const loading = ref(false);
 const draft = ref("");
 const messageList = ref(null);
 
+// don't let too many messages pile up
+// we keep them, but don't send them to the model
+const MAX_HISTORY = 20;
+
+const forServer = () =>
+  messages.value
+    .filter((message) => !message.local)
+    .slice(-MAX_HISTORY)
+    .map(({ role, content }) => ({ role, content }));
+
+const asId = (value) => {
+  const id = Number(value);
+  return Number.isInteger(id) && id > 0 ? id : undefined;
+};
+
+const pageContext = () => {
+  const route = router.currentRoute.value;
+  const on = (prefix) => route?.matched?.some((match) => match.path.startsWith(prefix));
+
+  return {
+    projectId:
+      (on("/projects/") ? asId(route.params.projectId ?? route.params.id) : undefined) ??
+      asId(localStorage.getItem("selectedProjectId")),
+    storyId: route?.name === "editStory" ? asId(route.params.storyId) : undefined,
+    sprintId: on("/projects/:projectId/sprints/:sprintId") ? asId(route.params.sprintId) : undefined,
+  };
+};
+
+const send = async () => {
+  const text = draft.value.trim();
+  if (!text || loading.value) return;
+
+  draft.value = "";
+  messages.value.push({ role: "user", content: text });
+  loading.value = true;
+
+  try {
+    const { data } = await AssistantServices.chat(forServer(), pageContext());
+    messages.value.push({ role: "assistant", content: data.reply, toolCalls: data.toolCalls });
+  } catch (error) {
+    messages.value.push({
+      role: "assistant",
+      content: error.response?.data?.message ?? error.message,
+      local: true,
+      failed: true,
+    });
+  } finally {
+    loading.value = false;
+  }
+};
+
+const reset = () => {
+  draft.value = "";
+  messages.value = [greeting()];
+  loading.value = false;
+};
+
+const html = new WeakMap();
+
 // gfm = github flavored markdown (supports more markdown features)
-const renderMarkdown = (content) =>
-  DOMPurify.sanitize(marked.parse(content ?? "", { breaks: true, gfm: true }), {
-    ADD_ATTR: ["target", "rel"],
-  });
+const render = (message) => {
+  if (!html.has(message)) {
+    html.set(
+      message,
+      DOMPurify.sanitize(marked.parse(message.content ?? "", { breaks: true, gfm: true }), {
+        ADD_ATTR: ["target", "rel"], // allow links to work properly
+      }),
+    );
+  }
+  return html.get(message);
+};
 
 const followLink = (event) => {
   const anchor = event.target.closest("a");
   if (!anchor) return;
 
   const href = anchor.getAttribute("href") ?? "";
-
   const path = href.startsWith("/")
     ? href
     : href.startsWith(window.location.origin)
@@ -37,7 +104,6 @@ const followLink = (event) => {
 
   if (path === null) {
     anchor.target = "_blank";
-    anchor.rel = "noopener noreferrer";
     return;
   }
 
@@ -56,14 +122,6 @@ const scrollToBottom = async () => {
 };
 
 watch(() => [messages.value.length, loading.value, open.value], scrollToBottom);
-
-const send = () => {
-  const text = draft.value.trim();
-  if (!text) return;
-
-  draft.value = "";
-  store.dispatch("assistant/send", text);
-};
 </script>
 
 <template>
@@ -71,7 +129,10 @@ const send = () => {
     <div class="d-flex flex-column fill-height">
       <v-toolbar color="primary" density="comfortable" flat>
         <v-toolbar-title class="text-body-1 font-weight-medium">Assistant</v-toolbar-title>
-        <v-btn icon="mdi-close" variant="text" @click="open = false" />
+        <div class="d-flex ga-2">
+          <v-btn icon="mdi-eraser-variant" variant="text" @click="reset" />
+          <v-btn icon="mdi-close" variant="text" @click="open = false" />
+        </div>
       </v-toolbar>
 
       <div ref="messageList" class="flex-grow-1 overflow-y-auto pa-4">
@@ -82,17 +143,17 @@ const send = () => {
           :class="message.role === 'user' ? 'justify-end' : 'justify-start'"
         >
           <v-sheet
-            :color="message.role === 'user' ? 'primary' : 'white'"
-            :class="message.role === 'user' ? 'text-white' : ''"
+            :color="message.role === 'user' ? 'primary' : message.failed ? 'error' : 'white'"
+            :class="message.role === 'user' || message.failed ? 'text-white' : ''"
             class="pa-3 rounded-lg text-body-2"
             max-width="80%"
             elevation="1"
           >
             <div
-              v-if="message.role === 'assistant'"
+              v-if="message.role === 'assistant' && !message.failed"
               class="markdown"
               @click="followLink"
-              v-html="renderMarkdown(message.content)"
+              v-html="render(message)"
             ></div>
             <template v-else>{{ message.content }}</template>
 
@@ -100,9 +161,10 @@ const send = () => {
               <v-chip
                 v-for="(call, callIndex) in message.toolCalls"
                 :key="callIndex"
-                :color="call.isError ? 'error' : undefined"
+                :color="call.isError ? 'error' : call.isWrite ? 'primary' : undefined"
+                :variant="call.isWrite && !call.isError ? 'flat' : 'tonal'"
+                :prepend-icon="call.isError ? 'mdi-alert-circle-outline' : call.isWrite ? 'mdi-pencil' : undefined"
                 size="x-small"
-                variant="tonal"
                 label
               >
                 {{ call.name }}
@@ -144,7 +206,7 @@ const send = () => {
 </template>
 
 <style>
-/* AI wrote this CSS */
+/* AI GENERATED - for stying the markdown responses */
 .markdown > :first-child {
   margin-top: 0;
 }
