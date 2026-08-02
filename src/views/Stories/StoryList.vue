@@ -23,10 +23,7 @@ function removeDuplicatesAndSort(array) {
   const unique = [];
 
   array.forEach((item) => {
-    if (
-      !!item.value &&
-      !unique.some((existing) => existing.value === item.value)
-    ) {
+    if (!!item.value && !unique.some((existing) => existing.value === item.value)) {
       unique.push(item);
     }
   });
@@ -73,13 +70,10 @@ const assigneeOptions = computed(() =>
 const filteredStories = computed(() =>
   (stories.value ?? []).filter(
     (story) =>
-      (!stateFilter.value.length ||
-        stateFilter.value.includes(story.state?.id)) &&
+      (!stateFilter.value.length || stateFilter.value.includes(story.state?.id)) &&
       (!typeFilter.value.length || typeFilter.value.includes(story.type?.id)) &&
-      (!sprintFilter.value.length ||
-        sprintFilter.value.includes(story.sprint?.id)) &&
-      (!assigneeFilter.value.length ||
-        assigneeFilter.value.includes(story.assignee?.id)),
+      (!sprintFilter.value.length || sprintFilter.value.includes(story.sprint?.id)) &&
+      (!assigneeFilter.value.length || assigneeFilter.value.includes(story.assignee?.id)),
   ),
 );
 
@@ -89,10 +83,7 @@ const headers = [
   {
     title: "Assignee",
     key: "assignee",
-    value: (item) =>
-      item.assignee
-        ? `${item.assignee.firstName} ${item.assignee.lastName}`
-        : "",
+    value: (item) => (item.assignee ? `${item.assignee.firstName} ${item.assignee.lastName}` : ""),
   },
   { title: "Sprint", key: "sprint.title" },
   { title: "Type", key: "type.name" },
@@ -148,7 +139,7 @@ async function getStoriesForProject(projectId) {
               class="me-2"
               prepend-icon="mdi-plus"
               rounded="lg"
-              text="New Story"
+              text="Add Story"
               border
               :to="{ name: 'createStory', params: { id: projectId } }"
             ></v-btn>

@@ -128,7 +128,7 @@ async function deleteStory() {
           <v-card-text>
             <v-row no-gutters>
               <v-col class="px-2">
-                <v-text-field v-model="story.title" label="Title"></v-text-field>
+                <v-text-field v-model="story.title" label="Title (required)"></v-text-field>
               </v-col>
             </v-row>
             <v-row no-gutters>
@@ -142,6 +142,7 @@ async function deleteStory() {
                       modules: quillModules,
                     }"
                   />
+                  <p class="text-caption text-medium-emphasis mt-2">Required</p>
                 </div>
               </v-col>
             </v-row>
@@ -176,7 +177,7 @@ async function deleteStory() {
               item-title="name"
               item-value="id"
               :items="project.storyState"
-              label="State"
+              label="State (required)"
               density="compact"
             ></v-autocomplete>
             <v-select

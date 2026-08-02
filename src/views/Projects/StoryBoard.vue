@@ -83,7 +83,7 @@ function editStory(storyId) {
     <v-skeleton-loader color="secondary" type="card"></v-skeleton-loader>
   </v-container>
   <v-container v-else>
-    <h4 class="pl-0 text-h5 mb-6 font-weight-medium">{{ project.title }} - Story Board</h4>
+    <h4 class="pl-0 text-h5 mb-6 font-weight-medium">{{ project.title }} - Storyboard</h4>
     <v-row>
       <v-col v-for="(storyState, i) in storyStates" :key="i">
         <v-card class="rounded" elevation-5>
@@ -97,13 +97,16 @@ function editStory(storyId) {
             ><template #item="{ element, index }">
               <v-list-item
                 :key="element.id"
-                class="cursor-grab"
                 :class="{
                   'border-b': index < storyStates.length - 1,
                 }"
+                :to="{
+                  name: 'editStory',
+                  params: { projectId: projectId, storyId: element.id },
+                }"
               >
                 <template v-slot:prepend>
-                  <v-icon class="text-medium-emphasis" icon="mdi-drag"></v-icon>
+                  <v-icon class="text-medium-emphasis cursor-grab" icon="mdi-drag"></v-icon>
                 </template>
 
                 <v-tooltip text="Tooltip">
@@ -111,10 +114,6 @@ function editStory(storyId) {
                     {{ element.title }}
                   </template>
                 </v-tooltip>
-
-                <template v-slot:append>
-                  <v-btn icon="mdi-pencil" variant="tonal" size="small" @click="editStory(element.id)"></v-btn>
-                </template>
               </v-list-item>
             </template>
           </draggable>

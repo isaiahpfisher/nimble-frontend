@@ -109,7 +109,7 @@ function createProject() {
 
 // Navigation stuff
 const userItems = ref([
-  { title: "Story Board", icon: "mdi-view-column", name: "projectBoard" },
+  { title: "Storyboard", icon: "mdi-view-column", name: "projectBoard" },
   { title: "Backlog", icon: "mdi-database", name: "projectBacklog" },
   { title: "Sprints", icon: "mdi-chart-gantt", name: "projectSprints" },
   { title: "All Stories", icon: "mdi-view-list", name: "projectStories" },
@@ -153,7 +153,7 @@ const adminItems = ref([
       prepend-icon="mdi-plus"
       :to="{ name: 'createStory', params: { id: selectedProject.id } }"
     >
-      New Story
+      Add Story
     </v-btn>
     <v-btn
       v-if="user !== null"
