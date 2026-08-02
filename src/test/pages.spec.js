@@ -77,7 +77,13 @@ const PAGES = [
     expect: ["Sprint 2", "Board", "Plan", "Retro", "Burndown"],
   },
   { name: "sprintBoard", path: "/projects/1/sprints/2", expect: ["Board"] },
-  { name: "sprintPlan", path: "/projects/1/sprints/2/plan", expect: ["Plan"] },
+  {
+    name: "sprintPlan",
+    path: "/projects/1/sprints/2/plan",
+    // Both columns are checked: the backlog story comes from the backlog
+    // endpoint, the sprint story off the sprint itself.
+    expect: ["Backlog", "Sprint 2", "High priority backlog story", "Test story title"],
+  },
   { name: "sprintRetro", path: "/projects/1/sprints/2/retro", expect: ["Retro"] },
   // The burndown chart is stubbed out (no canvas in jsdom), so there is no text
   // to match — reaching the stub at all means the data pipeline ran.
