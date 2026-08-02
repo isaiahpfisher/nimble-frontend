@@ -83,6 +83,11 @@ export const SPRINTS = [
   SPRINT,
 ];
 
+export const BACKLOG = [
+  { ...STORY, id: 6, title: "Low priority backlog story", priority: "Low", sprintId: null, sprint: null },
+  { ...STORY, id: 7, title: "High priority backlog story", priority: "High", sprintId: null, sprint: null },
+];
+
 export const ACTIVITY = [];
 export const COMMENTS = [];
 
@@ -97,6 +102,7 @@ const ROUTES = [
 
   [/^projects$/, [PROJECT]],
   [/^projects\/\d+$/, PROJECT],
+  [/^projects\/\d+\/backlog(\/\d+\/sprint)?$/, BACKLOG],
   [/^projects\/\d+\/stories$/, [STORY]],
   [/^projects\/\d+\/stories\/\d+$/, STORY],
   [/^projects\/\d+\/stories\/\d+\/comments$/, COMMENTS],
