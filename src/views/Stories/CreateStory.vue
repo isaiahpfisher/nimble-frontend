@@ -84,7 +84,7 @@ async function createStory() {
       <v-card-text>
         <v-row no-gutters>
           <v-col class="px-2">
-            <v-text-field v-model="story.title" label="Title"></v-text-field>
+            <v-text-field v-model="story.title" label="Title (required)"></v-text-field>
           </v-col>
           <v-col class="px-2">
             <v-autocomplete
@@ -92,7 +92,7 @@ async function createStory() {
               item-title="name"
               item-value="id"
               :items="project.storyState"
-              label="State"
+              label="State (required)"
             ></v-autocomplete>
           </v-col>
         </v-row>
@@ -103,10 +103,11 @@ async function createStory() {
                 v-model:content="story.description"
                 content-type="html"
                 :options="{
-                  placeholder: 'Description',
+                  placeholder: 'Description (required)',
                   modules: quillModules,
                 }"
               />
+              <p class="text-caption text-medium-emphasis mt-2">Required</p>
             </div>
           </v-col>
         </v-row>

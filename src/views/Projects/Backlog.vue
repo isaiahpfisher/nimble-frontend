@@ -58,20 +58,11 @@ async function assignSprint() {
   assigning.value = true;
 
   try {
-    await BacklogServices.assignSprint(
-      projectId,
-      selectedStory.value.id,
-      selectedSprint.value,
-    );
+    await BacklogServices.assignSprint(projectId, selectedStory.value.id, selectedSprint.value);
 
-    stories.value = stories.value.filter(
-      (story) => story.id !== selectedStory.value.id,
-    );
+    stories.value = stories.value.filter((story) => story.id !== selectedStory.value.id);
 
-    snackbar.value.show(
-      `${selectedStory.value.title} assigned to sprint`,
-      "success",
-    );
+    snackbar.value.show(`${selectedStory.value.title} assigned to sprint`, "success");
 
     assignSprintDialog.value = false;
     selectedStory.value = null;
@@ -125,11 +116,7 @@ function goToSprintPage() {
           <div class="action-column">Action</div>
         </div>
 
-        <div
-          v-for="element in stories"
-          :key="element.id"
-          class="backlog-row"
-        >
+        <div v-for="element in stories" :key="element.id" class="backlog-row">
           <div>
             <v-chip size="small" variant="tonal">
               {{ element.priority }}
@@ -145,21 +132,11 @@ function goToSprintPage() {
           </div>
 
           <div>
-            {{
-              element.assignee
-                ? `${element.assignee.firstName} ${element.assignee.lastName}`
-                : "Unassigned"
-            }}
+            {{ element.assignee ? `${element.assignee.firstName} ${element.assignee.lastName}` : "Unassigned" }}
           </div>
 
           <div class="action-column">
-            <v-btn
-              color="primary"
-              size="small"
-              variant="text"
-              class="px-0"
-              @click="openAssignSprint(element)"
-            >
+            <v-btn color="primary" size="small" variant="text" class="px-0" @click="openAssignSprint(element)">
               Assign to Sprint
             </v-btn>
           </div>
@@ -167,9 +144,7 @@ function goToSprintPage() {
 
         <div v-if="stories.length === 0" class="empty-state">
           <div class="text-h6">No stories in backlog</div>
-          <div class="text-medium-emphasis">
-            There are no not-started stories in the backlog.
-          </div>
+          <div class="text-medium-emphasis">There are no not-started stories in the backlog.</div>
         </div>
       </div>
     </v-card>
@@ -196,25 +171,15 @@ function goToSprintPage() {
             clearable
           ></v-select>
 
-          <v-btn variant="text" @click="goToSprintPage">
-            Create New Sprint
-          </v-btn>
+          <v-btn variant="text" @click="goToSprintPage"> Create New Sprint </v-btn>
         </v-card-text>
 
         <v-card-actions>
           <v-spacer></v-spacer>
 
-          <v-btn variant="text" @click="assignSprintDialog = false">
-            Cancel
-          </v-btn>
+          <v-btn variant="text" @click="assignSprintDialog = false"> Cancel </v-btn>
 
-          <v-btn
-            color="primary"
-            variant="flat"
-            :disabled="!selectedSprint"
-            :loading="assigning"
-            @click="assignSprint"
-          >
+          <v-btn color="primary" variant="flat" :disabled="!selectedSprint" :loading="assigning" @click="assignSprint">
             Assign
           </v-btn>
         </v-card-actions>
