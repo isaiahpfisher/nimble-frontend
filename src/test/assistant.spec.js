@@ -151,3 +151,47 @@ describe("what the panel keeps", () => {
     expect(sent.map((message) => message.content)).toEqual(["what am I working on?", "try again"]);
   });
 });
+
+describe("carrying the conversation on", () => {
+  // The server holds what the assistant actually saw — tool results and all —
+  // and this id is the panel's handle on it. Without it every follow-up starts
+  // from nothing and the tools are all run again.
+  it("sends nothing the first time and the server's id after that", async () => {
+    AssistantServices.chat.mockResolvedValueOnce({
+      data: { reply: "ok", toolCalls: [], conversationId: "abc-123" },
+    });
+
+    const panel = await openPanelAt("/projects/2/backlog");
+    await ask(panel, "what am I working on?");
+    expect(lastRequest()[2]).toBeNull();
+
+    await ask(panel, "and the first one?");
+    expect(lastRequest()[2]).toBe("abc-123");
+  });
+
+  it("keeps the id it has when a reply comes back without one", async () => {
+    AssistantServices.chat.mockResolvedValueOnce({
+      data: { reply: "ok", toolCalls: [], conversationId: "abc-123" },
+    });
+
+    const panel = await openPanelAt("/projects/2/backlog");
+    await ask(panel, "first");
+    await ask(panel, "second");
+
+    expect(lastRequest()[2]).toBe("abc-123");
+  });
+
+  it("starts a new conversation when the panel is reset", async () => {
+    AssistantServices.chat.mockResolvedValueOnce({
+      data: { reply: "ok", toolCalls: [], conversationId: "abc-123" },
+    });
+
+    const panel = await openPanelAt("/projects/2/backlog");
+    await ask(panel, "what am I working on?");
+
+    await panel.find('[data-test="assistant-reset"]').trigger("click");
+    await ask(panel, "starting over");
+
+    expect(lastRequest()[2]).toBeNull();
+  });
+});

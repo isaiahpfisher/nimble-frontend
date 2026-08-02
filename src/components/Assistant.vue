@@ -19,8 +19,7 @@ const loading = ref(false);
 const draft = ref("");
 const messageList = ref(null);
 
-// don't let too many messages pile up
-// we keep them, but don't send them to the model
+const conversationId = ref(null);
 const MAX_HISTORY = 20;
 
 const forServer = () =>
@@ -56,7 +55,8 @@ const send = async () => {
   loading.value = true;
 
   try {
-    const { data } = await AssistantServices.chat(forServer(), pageContext());
+    const { data } = await AssistantServices.chat(forServer(), pageContext(), conversationId.value);
+    conversationId.value = data.conversationId ?? conversationId.value;
     messages.value.push({ role: "assistant", content: data.reply, toolCalls: data.toolCalls });
   } catch (error) {
     messages.value.push({
@@ -74,6 +74,7 @@ const reset = () => {
   draft.value = "";
   messages.value = [greeting()];
   loading.value = false;
+  conversationId.value = null;
 };
 
 const html = new WeakMap();
@@ -130,7 +131,7 @@ watch(() => [messages.value.length, loading.value, open.value], scrollToBottom);
       <v-toolbar color="primary" density="comfortable" flat>
         <v-toolbar-title class="text-body-1 font-weight-medium">Assistant</v-toolbar-title>
         <div class="d-flex ga-2">
-          <v-btn icon="mdi-eraser-variant" variant="text" @click="reset" />
+          <v-btn data-test="assistant-reset" icon="mdi-eraser-variant" variant="text" @click="reset" />
           <v-btn icon="mdi-close" variant="text" @click="open = false" />
         </div>
       </v-toolbar>
