@@ -93,17 +93,16 @@ async function handleDrop(event, stateId) {
     <v-skeleton-loader color="secondary" type="card"></v-skeleton-loader>
   </v-container>
   <v-container v-else>
-    <h4 class="pl-0 text-h5 font-weight-medium">{{ project.title }} - Story Board</h4>
+    <h4 class="pl-0 text-h5 font-weight-medium">{{ project.title }} - Storyboard</h4>
     <label>Choose a Sprint:</label>
     <v-select
       id="sprintselect"
+      class="mb-4"
       :items="sprints"
-      :key="id"
       item-title="title"
       item-value="id"
       v-model="selectedSprint"
     ></v-select>
-    <space></space>
     <v-row>
       <v-col v-for="(storyState, i) in storyStates" :key="i">
         <v-card class="rounded" elevation-5>
