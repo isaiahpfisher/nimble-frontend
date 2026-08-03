@@ -7,6 +7,7 @@ import SnackBar from "../../components/SnackBar.vue";
 import StoryBoard from "../../components/StoryBoard.vue";
 import StoryStateServices from "../../services/StoryStateServices";
 import StoryServices from "../../services/StoryServices";
+import SprintServices from "../../services/SprintServices";
 import { useRouter } from "vue-router";
 import draggable from "vuedraggable";
 
@@ -20,6 +21,8 @@ const sprintId = ref(null);
 const snackbar = ref(null);
 const storyStates = ref(null);
 const stories = ref(null);
+const sprints = ref(null);
+var selectedSprint = ref(null);
 
 
 onMounted(async () => {
@@ -27,6 +30,7 @@ onMounted(async () => {
   getProject(projectId.value);
   getStoryStates(projectId.value);
   getStories(projectId.value);
+  getSprints(projectId.value);
 });
 
 async function getProject(id) {
@@ -60,6 +64,17 @@ async function getStories(id) {
   }
 }
 
+async function getSprints(id) {
+  try {
+    const response = await SprintServices.getSprintsForProject(id);
+    sprints.value = response.data;
+    selectedSprint = sprints.value[0];
+  } catch (error) {
+    console.error(error);
+    snackbar.value.show(error.response?.data?.message ?? error.message);
+  }
+}
+
 
 async function handleDrop(event, stateId) {
   console.log(event);
@@ -81,16 +96,35 @@ function editStory(storyId){
   router.push({path: '/projects/'+projectId.value+'/stories/'+storyId});
 }
 
+function selectSprint(){
+  var sprint =document.getElementById("sprintselect");
+  for(var i =0; i < sprints.value.length; i++){
+    if(sprint.value == sprints.value[i].title){
+      selectedSprint = sprints.value[i].id;
+    }
+  }
+  getStories(projectId.value);
+}
+
 </script>
 
 <template>
-  <v-container v-if="!project||!stories">
+  <v-container v-if="!project||!stories||!sprints">
     <v-skeleton-loader color="secondary" type="card"></v-skeleton-loader>
   </v-container>
   <v-container v-else>
-    <h4 class="pl-0 text-h5 mb-6 font-weight-medium">
+    <h4 class="pl-0 text-h5 font-weight-medium">
       {{ project.title }} - Story Board
     </h4>
+    <label>Choose a Sprint:</label>
+    <v-select id="sprintselect"
+    :items="sprints"
+    :key="id">
+    </v-select>
+    <v-btn variant="flat" color="primary" @click="selectSprint()">
+      Select Sprint
+    </v-btn>
+    <space></space>
 <v-row>
   <v-col 
   v-for="(storyState, i) in storyStates"
@@ -100,7 +134,7 @@ function editStory(storyId){
         <v-card-title class="text-h6">{{ storyState.name }}</v-card-title>
             <draggable
               item-key="id"
-              :list="stories.filter(element=>element.stateId == storyState.id)"
+              :list="stories.filter(element=>element.stateId == storyState.id && element.sprintId == selectedSprint)"
               group="stories"
               animation="200"
               @change="event=>handleDrop(event, storyState.id)"
