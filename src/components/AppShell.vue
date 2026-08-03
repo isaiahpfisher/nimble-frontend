@@ -7,6 +7,7 @@ import ProjectServices from "../services/ProjectServices";
 import SnackBar from "./SnackBar.vue";
 import { useRoute } from "vue-router";
 import Assistant from "./Assistant.vue";
+import { resetConversation } from "../hooks/useAssistantConversation.js";
 
 const router = useRouter();
 const route = useRoute();
@@ -41,6 +42,7 @@ function logout() {
     });
   localStorage.removeItem("user");
   user.value = null;
+  resetConversation();
   router.push({ name: "login" });
 }
 

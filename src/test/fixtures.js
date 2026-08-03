@@ -67,11 +67,6 @@ export const STORY = {
   relationTwo: [],
 };
 
-// Stories the backlog view lists: not started, so not yet on a sprint.
-export const BACKLOG = [
-  { ...STORY, id: 6, title: "Backlog story title", sprintId: null, sprint: null },
-];
-
 export const SPRINT = {
   id: 2,
   projectId: 1,
@@ -88,6 +83,8 @@ export const SPRINTS = [
   SPRINT,
 ];
 
+// Stories the backlog view lists: not started, so not yet on a sprint. Two
+// priorities, because the backlog and sprint-planning views both sort by it.
 export const BACKLOG = [
   { ...STORY, id: 6, title: "Low priority backlog story", priority: "Low", sprintId: null, sprint: null },
   { ...STORY, id: 7, title: "High priority backlog story", priority: "High", sprintId: null, sprint: null },
@@ -95,6 +92,56 @@ export const BACKLOG = [
 
 export const ACTIVITY = [];
 export const COMMENTS = [];
+
+// Drafts the assistant wrote. The server answers { kind, result }, and nothing
+// in these has been saved — the page decides what to keep.
+export const GENERATED_CRITERIA = {
+  kind: "acceptance_criteria",
+  result: {
+    storyId: 5,
+    story: { id: 5, title: "Test story title" },
+    existingCount: 0,
+    criteria: [
+      {
+        title: "Reset email arrives",
+        description: "Given a registered user, when they request a reset, then an email arrives within a minute.",
+      },
+      {
+        title: "Unknown address is not revealed",
+        description: "Given an unregistered address, when a reset is requested, then the same confirmation is shown.",
+      },
+    ],
+  },
+};
+
+export const REWRITTEN_DESCRIPTION = {
+  kind: "story_description",
+  result: {
+    storyId: 5,
+    original: "The reset email never turns up.",
+    description:
+      "As a user, when I request a password reset, I want the email to arrive, so that I can get back into my account.",
+  },
+};
+
+export const DRAFTED_STORY = {
+  kind: "story_draft",
+  result: {
+    projectId: 1,
+    title: "Send password reset emails reliably",
+    description:
+      "As a user, when I request a password reset, I want the email to arrive, so that I can get back into my account.",
+    typeId: 3,
+    type: "Bug",
+    priority: "High",
+    criteria: [
+      {
+        title: "Reset email arrives",
+        description: "Given a registered user, when they request a reset, then an email arrives within a minute.",
+      },
+    ],
+  },
+};
 
 // [method, regex, response]. Methods are matched loosely so a page that PUTs to
 // a URL it can also GET does not need a second entry.
@@ -117,8 +164,6 @@ const ROUTES = [
   [/^projects\/\d+\/stories\/\d+\/relations(\/\d+)?$/, {}],
   [/^projects\/\d+\/storyStates(\/(\d+|reorder))?$/, STORY_STATES],
   [/^projects\/\d+\/storyTypes(\/\d+)?$/, STORY_TYPES],
-  [/^projects\/\d+\/backlog$/, BACKLOG],
-  [/^projects\/\d+\/backlog\/\d+\/sprint$/, {}],
   [/^projects\/\d+\/sprints$/, SPRINTS],
   [/^projects\/\d+\/repositories\/?$/, REPOSITORIES],
 
@@ -136,6 +181,10 @@ const ROUTES = [
 
   [/^comments\/\d+$/, {}],
   [/^activity$/, ACTIVITY],
+
+  [/^assistant\/generate\/acceptance_criteria$/, GENERATED_CRITERIA],
+  [/^assistant\/generate\/story_description$/, REWRITTEN_DESCRIPTION],
+  [/^assistant\/generate\/story_draft$/, DRAFTED_STORY],
 ];
 
 // Deep clone so a view that mutates its response cannot leak into the next test.

@@ -60,8 +60,10 @@ const filteredBacklog = computed(() =>
   backlog.value
     .filter(
       (story) =>
-        (!backlogSearch.value.length || story.title.toLowerCase().includes(backlogSearch.value.toLowerCase())) &&
-        (!backlogSearch.value.length || story.description.toLowerCase().includes(backlogSearch.value.toLowerCase())),
+        !backlogSearch.value.length ||
+        story.title.toLowerCase().includes(backlogSearch.value.toLowerCase()) ||
+        !backlogSearch.value.length ||
+        story.description.toLowerCase().includes(backlogSearch.value.toLowerCase()),
     )
     .sort((a, b) => priorityRank[b.priority] - priorityRank[a.priority]),
 );
@@ -70,17 +72,19 @@ const filteredSprintStories = computed(() =>
   sprint.value?.story
     .filter(
       (story) =>
-        (!sprintSearch.value.length || story.title.toLowerCase().includes(sprintSearch.value.toLowerCase())) &&
-        (!sprintSearch.value.length || story.description.toLowerCase().includes(sprintSearch.value.toLowerCase())),
+        !sprintSearch.value.length ||
+        story.title.toLowerCase().includes(sprintSearch.value.toLowerCase()) ||
+        !sprintSearch.value.length ||
+        story.description.toLowerCase().includes(sprintSearch.value.toLowerCase()),
     )
     .sort((a, b) => priorityRank[b.priority] - priorityRank[a.priority]),
 );
 
-const backlogPoints = computed(() => filteredBacklog.value.reduce((acc, story) => acc + story.estimate, 0));
+const totalPoints = (stories) => (stories ?? []).reduce((acc, story) => acc + (story.estimate ?? 0), 0);
 
-const sprintPoints = computed(() =>
-  (filteredSprintStories.value ?? []).reduce((acc, story) => acc + story.estimate, 0),
-);
+const backlogPoints = computed(() => totalPoints(filteredBacklog.value));
+
+const sprintPoints = computed(() => totalPoints(filteredSprintStories.value));
 
 async function addToSprint(story) {
   try {
@@ -155,7 +159,9 @@ async function removeFromSprint(story) {
 
                 <div class="d-flex flex-wrap ga-1 mt-2">
                   <v-chip size="small" variant="tonal" color="primary">Priority: {{ story.priority ?? "N/A" }}</v-chip>
-                  <v-chip size="small" variant="tonal" color="primary">Estimate: {{ story.estimate }}pts</v-chip>
+                  <v-chip size="small" variant="tonal" color="primary">
+                    Estimate: {{ story.estimate ?? "—" }}pts
+                  </v-chip>
                 </div>
 
                 <template #append>

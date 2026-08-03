@@ -19,6 +19,7 @@ vi.mock("../services/services.js", () => ({
 import router from "../router/index.js";
 import AssistantServices from "../services/AssistantServices.js";
 import Assistant from "../components/Assistant.vue";
+import { resetConversation } from "../hooks/useAssistantConversation.js";
 
 /** Mounts the panel open on `path`, the way the app shell does. */
 async function openPanelAt(path) {
@@ -54,6 +55,9 @@ const projectIdSentFrom = async (path) => (await contextSentFrom(path)).projectI
 beforeEach(() => {
   localStorage.clear();
   vi.clearAllMocks();
+  // the conversation outlives the panel now, so each test has to start it over
+  // the way a page refresh does
+  resetConversation();
   localStorage.setItem("user", JSON.stringify({ id: 1, token: "t" }));
 });
 
@@ -153,6 +157,44 @@ describe("what the panel keeps", () => {
 });
 
 describe("carrying the conversation on", () => {
+  // The shell is keyed on the route, so following a link — including one the
+  // assistant wrote — tears the panel down and builds a new one. The thread has
+  // to come back with it, or the answer the user just asked for is gone.
+  it("survives the panel being rebuilt on navigation", async () => {
+    AssistantServices.chat.mockResolvedValueOnce({
+      data: { reply: "Story 47 is in the current sprint.", toolCalls: [], conversationId: "abc-123" },
+    });
+
+    const panel = await openPanelAt("/projects/2/backlog");
+    await ask(panel, "where is story 47?");
+    panel.unmount();
+
+    const reopened = await openPanelAt("/projects/2/stories/47");
+    expect(reopened.text()).toContain("where is story 47?");
+    expect(reopened.text()).toContain("Story 47 is in the current sprint.");
+
+    await ask(reopened, "who owns it?");
+
+    const [sent, , id] = lastRequest();
+    expect(sent.map((message) => message.content)).toEqual([
+      "where is story 47?",
+      "Story 47 is in the current sprint.",
+      "who owns it?",
+    ]);
+    expect(id).toBe("abc-123");
+  });
+
+  it("starts over on a refresh", async () => {
+    const panel = await openPanelAt("/projects/2/backlog");
+    await ask(panel, "where is story 47?");
+    panel.unmount();
+
+    resetConversation(); // what a page load gives us: a fresh module
+    const reopened = await openPanelAt("/projects/2/backlog");
+
+    expect(reopened.text()).not.toContain("where is story 47?");
+  });
+
   // The server holds what the assistant actually saw — tool results and all —
   // and this id is the panel's handle on it. Without it every follow-up starts
   // from nothing and the tools are all run again.

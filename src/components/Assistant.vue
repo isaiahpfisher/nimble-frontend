@@ -4,22 +4,15 @@ import { useRouter } from "vue-router";
 import DOMPurify from "dompurify";
 import { marked } from "marked";
 import AssistantServices from "../services/AssistantServices.js";
+import { useAssistantConversation } from "../hooks/useAssistantConversation.js";
 
 const router = useRouter();
 
-const greeting = () => ({
-  role: "assistant",
-  content: "Hi! I'm the Nimble assistant. Ask me anything.",
-  local: true,
-});
-
 const open = defineModel({ default: false });
-const messages = ref([greeting()]);
-const loading = ref(false);
-const draft = ref("");
 const messageList = ref(null);
 
-const conversationId = ref(null);
+const { messages, conversationId, draft, loading, resetConversation } = useAssistantConversation();
+
 const MAX_HISTORY = 20;
 
 const forServer = () =>
@@ -70,13 +63,6 @@ const send = async () => {
   }
 };
 
-const reset = () => {
-  draft.value = "";
-  messages.value = [greeting()];
-  loading.value = false;
-  conversationId.value = null;
-};
-
 const html = new WeakMap();
 
 // gfm = github flavored markdown (supports more markdown features)
@@ -122,7 +108,7 @@ const scrollToBottom = async () => {
   if (messageList.value) messageList.value.scrollTop = messageList.value.scrollHeight;
 };
 
-watch(() => [messages.value.length, loading.value, open.value], scrollToBottom);
+watch(() => [messages.value.length, loading.value, open.value], scrollToBottom, { immediate: true });
 </script>
 
 <template>
@@ -131,7 +117,7 @@ watch(() => [messages.value.length, loading.value, open.value], scrollToBottom);
       <v-toolbar color="primary" density="comfortable" flat>
         <v-toolbar-title class="text-body-1 font-weight-medium">Assistant</v-toolbar-title>
         <div class="d-flex ga-2">
-          <v-btn data-test="assistant-reset" icon="mdi-eraser-variant" variant="text" @click="reset" />
+          <v-btn data-test="assistant-reset" icon="mdi-eraser-variant" variant="text" @click="resetConversation" />
           <v-btn icon="mdi-close" variant="text" @click="open = false" />
         </div>
       </v-toolbar>
