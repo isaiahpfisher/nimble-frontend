@@ -11,7 +11,7 @@ const router = useRouter();
 const open = defineModel({ default: false });
 const messageList = ref(null);
 
-const { messages, conversationId, draft, loading, resetConversation } = useAssistantConversation();
+const { messages, draft, loading, resetConversation } = useAssistantConversation();
 
 const MAX_HISTORY = 20;
 
@@ -48,8 +48,7 @@ const send = async () => {
   loading.value = true;
 
   try {
-    const { data } = await AssistantServices.chat(forServer(), pageContext(), conversationId.value);
-    conversationId.value = data.conversationId ?? conversationId.value;
+    const { data } = await AssistantServices.chat(forServer(), pageContext());
     messages.value.push({ role: "assistant", content: data.reply, toolCalls: data.toolCalls });
   } catch (error) {
     messages.value.push({

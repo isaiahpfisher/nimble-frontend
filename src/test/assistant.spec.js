@@ -156,13 +156,15 @@ describe("what the panel keeps", () => {
   });
 });
 
+// The transcript the panel holds is the only memory there is: the server keeps
+// nothing between requests, so whatever is not sent back is genuinely gone.
 describe("carrying the conversation on", () => {
-  // The shell is keyed on the route, so following a link — including one the
-  // assistant wrote — tears the panel down and builds a new one. The thread has
-  // to come back with it, or the answer the user just asked for is gone.
+  // The shell is keyed on the route, so following a link tears the panel down
+  // and builds a new one. The thread has to come back with it, or the answer
+  // the user just asked for is gone.
   it("survives the panel being rebuilt on navigation", async () => {
     AssistantServices.chat.mockResolvedValueOnce({
-      data: { reply: "Story 47 is in the current sprint.", toolCalls: [], conversationId: "abc-123" },
+      data: { reply: "Story 47 is in the current sprint.", toolCalls: [] },
     });
 
     const panel = await openPanelAt("/projects/2/backlog");
@@ -175,13 +177,11 @@ describe("carrying the conversation on", () => {
 
     await ask(reopened, "who owns it?");
 
-    const [sent, , id] = lastRequest();
-    expect(sent.map((message) => message.content)).toEqual([
+    expect(lastRequest()[0].map((message) => message.content)).toEqual([
       "where is story 47?",
       "Story 47 is in the current sprint.",
       "who owns it?",
     ]);
-    expect(id).toBe("abc-123");
   });
 
   it("starts over on a refresh", async () => {
@@ -195,38 +195,22 @@ describe("carrying the conversation on", () => {
     expect(reopened.text()).not.toContain("where is story 47?");
   });
 
-  // The server holds what the assistant actually saw — tool results and all —
-  // and this id is the panel's handle on it. Without it every follow-up starts
-  // from nothing and the tools are all run again.
-  it("sends nothing the first time and the server's id after that", async () => {
-    AssistantServices.chat.mockResolvedValueOnce({
-      data: { reply: "ok", toolCalls: [], conversationId: "abc-123" },
-    });
+  it("sends the whole exchange back, so a follow-up has something to go on", async () => {
+    AssistantServices.chat.mockResolvedValueOnce({ data: { reply: "Three things.", toolCalls: [] } });
 
     const panel = await openPanelAt("/projects/2/backlog");
     await ask(panel, "what am I working on?");
-    expect(lastRequest()[2]).toBeNull();
-
     await ask(panel, "and the first one?");
-    expect(lastRequest()[2]).toBe("abc-123");
+
+    expect(lastRequest()[0].map((message) => message.content)).toEqual([
+      "what am I working on?",
+      "Three things.",
+      "and the first one?",
+    ]);
   });
 
-  it("keeps the id it has when a reply comes back without one", async () => {
-    AssistantServices.chat.mockResolvedValueOnce({
-      data: { reply: "ok", toolCalls: [], conversationId: "abc-123" },
-    });
-
-    const panel = await openPanelAt("/projects/2/backlog");
-    await ask(panel, "first");
-    await ask(panel, "second");
-
-    expect(lastRequest()[2]).toBe("abc-123");
-  });
-
-  it("starts a new conversation when the panel is reset", async () => {
-    AssistantServices.chat.mockResolvedValueOnce({
-      data: { reply: "ok", toolCalls: [], conversationId: "abc-123" },
-    });
+  it("drops the thread when the panel is reset", async () => {
+    AssistantServices.chat.mockResolvedValueOnce({ data: { reply: "ok", toolCalls: [] } });
 
     const panel = await openPanelAt("/projects/2/backlog");
     await ask(panel, "what am I working on?");
@@ -234,6 +218,6 @@ describe("carrying the conversation on", () => {
     await panel.find('[data-test="assistant-reset"]').trigger("click");
     await ask(panel, "starting over");
 
-    expect(lastRequest()[2]).toBeNull();
+    expect(lastRequest()[0].map((message) => message.content)).toEqual(["starting over"]);
   });
 });
