@@ -2,6 +2,7 @@
 import { onMounted } from "vue";
 import { ref } from "vue";
 import { useRoute } from "vue-router";
+import { Octokit, App } from "octokit";
 import ProjectServices from "../../services/ProjectServices";
 import SnackBar from "../../components/SnackBar.vue";
 import StoryBoard from "../../components/StoryBoard.vue";
@@ -10,9 +11,12 @@ import StoryServices from "../../services/StoryServices";
 import SprintServices from "../../services/SprintServices";
 import { useRouter } from "vue-router";
 import draggable from "vuedraggable";
+require("dotenv").config();
+
 
 const route = useRoute();
 const router = useRouter();
+
 
 const user = ref(null);
 const projectId = ref(route.params.id);
@@ -22,7 +26,10 @@ const snackbar = ref(null);
 const storyStates = ref(null);
 const stories = ref(null);
 const sprints = ref(null);
+const pullRequests = ref(null);
 var selectedSprint = ref(null);
+
+
 
 
 onMounted(async () => {
@@ -31,9 +38,9 @@ onMounted(async () => {
   getStoryStates(projectId.value);
   getStories(projectId.value);
   getSprints(projectId.value);
+  getPullRequests();
 });
 
-//comment
 
 async function getProject(id) {
   try {
@@ -45,6 +52,7 @@ async function getProject(id) {
   }
 }
 
+
 async function getStoryStates(id) {
   try {
     const response = await StoryStateServices.getStoryStatesForProject(id);
@@ -54,6 +62,7 @@ async function getStoryStates(id) {
     snackbar.value.show(error.response?.data?.message ?? error.message);
   }
 }
+
 
 async function getStories(id) {
   try {
@@ -65,6 +74,7 @@ async function getStories(id) {
     snackbar.value.show(error.response?.data?.message ?? error.message);
   }
 }
+
 
 async function getSprints(id) {
   try {
@@ -78,11 +88,14 @@ async function getSprints(id) {
 }
 
 
+
+
 async function handleDrop(event, stateId) {
   console.log(event);
   if (!event.added) return;
   var story = event.added.element;
   story.stateId = stateId;
+
 
   try {
     await StoryServices.updateStory(projectId, story.id, story);
@@ -90,13 +103,16 @@ async function handleDrop(event, stateId) {
   } catch (error) {
     console.error(error);
     snackbar.value.show(error.response?.data?.message ?? error.message);
-  } 
+  }
 }
+
+
 
 
 function editStory(storyId){
   router.push({path: '/projects/'+projectId.value+'/stories/'+storyId});
 }
+
 
 function selectSprint(){
   var sprint =document.getElementById("sprintselect");
@@ -108,7 +124,67 @@ function selectSprint(){
   getStories(projectId.value);
 }
 
+
+
+
+const octokit = new Octokit({
+  auth: process.env.GITHUB_TOKEN
+})
+
+
+
+
+
+
+async function getPullRequests() {
+  try {
+    const response = await octokit.request('GET /repos/'+process.env.OWNER+'/'+process.env.REPO+'/pulls', {
+      owner: process.env.OWNER,
+      repo: process.env.REPO,
+      headers: {
+        'X-GitHub-Api-Version': '2026-03-10'
+      }
+    });
+    pullRequests.value = response.data;
+    console.log(pullRequests);
+    checkStoryPositions();
+  } catch (error) {
+    console.error(error);
+    snackbar.value.show(error.response?.data?.message ?? error.message);
+  }
+}
+
+
+function checkStoryPositions() {
+for(var i = 0; i < pullRequests.value.length; i++){
+  for(var j=0; j < stories.value.length; j++){
+    if((pullRequests.value.length>0)&&(stories.value.length>0)){
+      if(pullRequests.value[i].head.ref == stories.value[j].title){
+        console.log("match");
+        if(!(project.value.prReviewStateId == null)){
+          console.log(stories.value[j].stateId = project.value.prReviewStateId);
+          updateStory(stories.value[j].id, stories.value[j]);
+        }
+      }
+    }
+  }
+}
+}
+
+
+async function updateStory(id, story) {
+  try {
+    const response = await StoryServices.updateStory(projectId.value, id, story) ;
+    getStories(projectId.value);
+  } catch (error) {
+    console.error(error);
+    snackbar.value.show(error.response?.data?.message ?? error.message);
+  }
+}
+
+
 </script>
+
 
 <template>
   <v-container v-if="!project||!stories||!sprints">
@@ -128,7 +204,7 @@ function selectSprint(){
     </v-btn>
     <space></space>
 <v-row>
-  <v-col 
+  <v-col
   v-for="(storyState, i) in storyStates"
   :key="i"
   >
@@ -141,7 +217,7 @@ function selectSprint(){
               animation="200"
               @change="event=>handleDrop(event, storyState.id)"
             ><template #item="{element, index}">
-                <v-list-item 
+                <v-list-item
                   :key="element.id"
                   class="cursor-grab"
                   :class="{
@@ -153,11 +229,14 @@ function selectSprint(){
                   </template>
 
 
+
+
                   <v-tooltip text="Tooltip">
                     <template v-slot:activator="{ props }">
                       {{ element.title }}
                   </template>
                   </v-tooltip>
+
 
                   <template v-slot:append>
                     <v-btn
@@ -175,6 +254,11 @@ function selectSprint(){
   </v-row>
     </v-container>
 
+
   <SnackBar ref="snackbar" />
 </template>
+
+
+
+
 
