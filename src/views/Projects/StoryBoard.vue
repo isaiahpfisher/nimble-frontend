@@ -138,9 +138,9 @@ const octokit = new Octokit({
 
 async function getPullRequests() {
   try {
-    const response = await octokit.request('GET /repos/'+process.env.OWNER+'/'+process.env.REPO+'/pulls', {
-      owner: process.env.OWNER,
-      repo: process.env.REPO,
+    const response = await octokit.request('GET /repos/IanGWhite/Test-Repository-For-Nimble/pulls', {
+      owner: 'IanGWhite',
+      repo: 'Test-Repository-For-Nimble',
       headers: {
         'X-GitHub-Api-Version': '2026-03-10'
       }
