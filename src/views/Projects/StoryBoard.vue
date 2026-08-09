@@ -98,9 +98,11 @@ async function getRepositories(id) {
     repositories.value = response.data;
     if(!(repositories.value == null)){
       for(var i = 0; i < repositories.value.length; i++){
+        if(!(repositories.value[i].owner == null)&&!(repositories.value[i].githubToken == null)){
         console.log(repositories.value[i].githubToken+" "+ repositories.value[i].name +" "+repositories.value[i].owner+" "+repositories.value.length);
          getPullRequests(repositories.value[i].githubToken, repositories.value[i].name, repositories.value[i].owner);
          getBranches(repositories.value[i].githubToken, repositories.value[i].name, repositories.value[i].owner);
+        }
       }
     }
   } catch (error) {
