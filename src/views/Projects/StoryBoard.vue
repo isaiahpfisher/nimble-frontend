@@ -9,9 +9,9 @@ import StoryBoard from "../../components/StoryBoard.vue";
 import StoryStateServices from "../../services/StoryStateServices";
 import StoryServices from "../../services/StoryServices";
 import SprintServices from "../../services/SprintServices";
+import RepositoryServices from "../../services/RepositoryServices";
 import { useRouter } from "vue-router";
 import draggable from "vuedraggable";
-require("dotenv").config();
 
 
 const route = useRoute();
@@ -27,6 +27,11 @@ const storyStates = ref(null);
 const stories = ref(null);
 const sprints = ref(null);
 const pullRequests = ref(null);
+const repositories = ref(null);
+const repoTokens = ref(null);
+const octokit = ref(null);
+const branches = ref(null);
+const mainReference = ref(null);
 var selectedSprint = ref(null);
 
 
@@ -38,7 +43,7 @@ onMounted(async () => {
   getStoryStates(projectId.value);
   getStories(projectId.value);
   getSprints(projectId.value);
-  getPullRequests();
+  getRepositories(projectId.value);
 });
 
 
@@ -87,6 +92,23 @@ async function getSprints(id) {
   }
 }
 
+async function getRepositories(id) {
+  try {
+    const response = await RepositoryServices.getAllForProject(id);
+    repositories.value = response.data;
+    if(!(repositories.value == null)){
+      for(var i = 0; i < repositories.value.length; i++){
+        console.log(repositories.value[i].githubToken+" "+ repositories.value[i].name +" "+repositories.value[i].owner+" "+repositories.value.length);
+         getPullRequests(repositories.value[i].githubToken, repositories.value[i].name, repositories.value[i].owner);
+         getBranches(repositories.value[i].githubToken, repositories.value[i].name, repositories.value[i].owner);
+      }
+    }
+  } catch (error) {
+    console.error(error);
+    snackbar.value.show(error.response?.data?.message ?? error.message);
+  }
+}
+
 
 
 
@@ -127,27 +149,46 @@ function selectSprint(){
 
 
 
-const octokit = new Octokit({
-  auth: process.env.GITHUB_TOKEN
+
+
+
+async function getPullRequests(token, repository, owner) {
+  const octokit = new Octokit({
+  auth: token
 })
-
-
-
-
-
-
-async function getPullRequests() {
+console.log(token);
   try {
-    const response = await octokit.request('GET /repos/IanGWhite/Test-Repository-For-Nimble/pulls', {
-      owner: 'IanGWhite',
-      repo: 'Test-Repository-For-Nimble',
+    const response = await octokit.request('GET /repos/'+owner+'/'+repository+'/pulls', {
+      owner: owner,
+      repo: repository,
       headers: {
         'X-GitHub-Api-Version': '2026-03-10'
       }
     });
     pullRequests.value = response.data;
-    console.log(pullRequests);
-    checkStoryPositions();
+    checkPullRequestPositions();
+  } catch (error) {
+    console.error(error);
+    snackbar.value.show(error.response?.data?.message ?? error.message);
+  }
+}//Test-Repository-For-Nimble
+
+async function getBranches(token, repository, owner) {
+  const octokit = new Octokit({
+  auth: token
+})
+console.log(token);
+  try {
+    const response = await octokit.request('GET /repos/'+owner+'/'+repository+'/branches', {
+      owner: owner,
+      repo: repository,
+      headers: {
+        'X-GitHub-Api-Version': '2026-03-10'
+      }
+    });
+    branches.value = response.data;
+    console.log(branches.value);
+    checkBranchPositions(token, repository, owner);
   } catch (error) {
     console.error(error);
     snackbar.value.show(error.response?.data?.message ?? error.message);
@@ -155,21 +196,51 @@ async function getPullRequests() {
 }
 
 
-function checkStoryPositions() {
-for(var i = 0; i < pullRequests.value.length; i++){
-  for(var j=0; j < stories.value.length; j++){
-    if((pullRequests.value.length>0)&&(stories.value.length>0)){
-      if(pullRequests.value[i].head.ref == stories.value[j].title){
-        console.log("match");
-        if(!(project.value.prReviewStateId == null)){
-          console.log(stories.value[j].stateId = project.value.prReviewStateId);
-          updateStory(stories.value[j].id, stories.value[j]);
+function checkPullRequestPositions() {
+
+//positons for pull requests
+  for(var i = 0; i < pullRequests.value.length; i++){
+    for(var j=0; j < stories.value.length; j++){
+      if((pullRequests.value.length>0)&&(stories.value.length>0)){
+        if(pullRequests.value[i].head.ref == stories.value[j].title){
+          if(!(project.value.prReviewStateId == null)){
+            console.log(stories.value[j].stateId = project.value.prReviewStateId);
+            updateStory(stories.value[j].id, stories.value[j]);
+          }
         }
       }
     }
   }
 }
+
+function checkBranchPositions(token, repository, owner){
+//positions for creating stories
+  for(var j=0; j < stories.value.length; j++){
+    if(stories.value[j].stateId == project.value.branchCreationStateId){
+      var isMatch = false;
+      for(var i = 0; i < branches.value.length; i++){
+        if((branches.value.length>0)&&(stories.value.length>0)&&(branches.value[i].name != 'main')){
+          if(branches.value[i].name == stories.value[j].title){
+            isMatch = true;
+          }
+          console.log(branches.value[i].name +" "+stories.value[j].title)
+        }
+      }
+      if(isMatch == false){
+        //check what repository is labled for the story before running the create branch
+        
+        for(var x = 0; x < repositories.value.length; x++){
+          if((stories.value[j].repositoryId == repositories.value[x].id)&&(repositories.value.length > 0)){
+            console.log("make a new story with the name: "+stories.value[j].title+" and heres the extras "+token+repository+owner)
+            createBranch(token, repository, owner, stories.value[j].title);
+          }
+        }
+      }
+    }
+  }
 }
+
+
 
 
 async function updateStory(id, story) {
@@ -182,6 +253,51 @@ async function updateStory(id, story) {
   }
 }
 
+async function createBranch(token, repository, owner, name) {
+  const octokit = new Octokit({
+  auth: token
+})
+var newName = name;
+//var newName = name.split(" ").join("_");
+
+//i dont like that its a try catch in a try catch
+  try {
+    const response = await octokit.request('GET /repos/'+owner+'/'+repository+'/git/ref/heads/main', {
+      owner: owner,
+      repo: repository,
+      ref: 'heads/main',
+      headers: {
+        'X-GitHub-Api-Version': '2026-03-10'
+      }
+    });
+    mainReference.value = response.data;
+    console.log("SHA1 gathered");
+    console.log(mainReference.value.object.sha);
+
+
+  try {
+    const response = await octokit.request('POST /repos/'+owner+'/'+repository+'/git/refs', {
+      owner: owner,
+      repo: repository,
+      ref: 'refs/heads/'+newName,
+      sha: mainReference.value.object.sha,
+      headers: {
+        'X-GitHub-Api-Version': '2026-03-10'
+      }
+    });
+    console.log("branch created");
+  } catch (error) {
+    console.error(error);
+    snackbar.value.show(error.response?.data?.message ?? error.message);
+  }
+
+  } catch (error) {
+    console.error(error);
+    snackbar.value.show(error.response?.data?.message ?? error.message);
+  }
+
+
+}
 
 </script>
 
