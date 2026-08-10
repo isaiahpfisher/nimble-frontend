@@ -91,6 +91,38 @@ export const BACKLOG = [
 ];
 
 export const ACTIVITY = [];
+export const SYSTEM_LOGS = [
+  {
+    id: 1,
+    subjectType: "REPOSITORY",
+    subjectId: 40,
+    action: "CREATE_REPOSITORY",
+    metadata: {
+      message: "Repository connected",
+      repositoryName: "acme/nimble",
+      projectId: 1,
+    },
+    createdAt: "2026-08-09T18:00:00.000Z",
+    updatedAt: "2026-08-09T18:00:00.000Z",
+    userId: 1,
+    user: USERS[0],
+  },
+  {
+    id: 2,
+    subjectType: "REPOSITORY",
+    subjectId: 40,
+    action: "UPDATE_REPOSITORY",
+    metadata: {
+      message: "Repository updated",
+      repositoryName: "acme/nimble",
+      projectId: 1,
+    },
+    createdAt: "2026-08-09T17:00:00.000Z",
+    updatedAt: "2026-08-09T17:00:00.000Z",
+    userId: 1,
+    user: USERS[0],
+  },
+];
 export const COMMENTS = [];
 
 // Drafts the assistant wrote. The server answers { kind, result }, and nothing
@@ -181,6 +213,7 @@ const ROUTES = [
 
   [/^comments\/\d+$/, {}],
   [/^activity$/, ACTIVITY],
+  [/^systemlogs$/, SYSTEM_LOGS],
 
   [/^assistant\/generate\/acceptance_criteria$/, GENERATED_CRITERIA],
   [/^assistant\/generate\/story_description$/, REWRITTEN_DESCRIPTION],

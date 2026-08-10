@@ -71,55 +71,35 @@ const summary = computed(() => {
 
 
 <template>
+  <div class="d-flex ga-3 px-4 py-3">
+    <v-avatar color="accent" size="32">
+      <span class="text-white text-caption font-weight-bold">
+        {{ initials }}
+      </span>
+    </v-avatar>
 
-<div class="d-flex ga-3 px-4 py-3">
-
-  <v-avatar color="accent" size="32">
-    <span class="text-white text-caption font-weight-bold">
-      {{ initials }}
-    </span>
-  </v-avatar>
-
-
-  <div class="d-flex flex-column flex-grow-1">
-
-    <div class="d-flex align-center">
-
-        <span 
-            class="font-weight-medium"
-            style="width: 200px;"
+    <div class="d-flex flex-column flex-grow-1">
+      <div class="d-flex align-center">
+        <span
+          class="font-weight-medium"
+          style="width: 200px;"
         >
-            {{ author }}
+          {{ author }}
         </span>
 
-
-        <span 
-            class="text-medium-emphasis"
-            style="width: 280px;"
+        <span
+          class="text-medium-emphasis"
+          style="width: 280px;"
         >
-            {{ summary }}
+          {{ summary }}
         </span>
 
-
-        <v-tooltip :text="format(log.createdAt,'PPpp')">
-
-        <template #activator="{props}">
-          <span
-            v-bind="props"
-            class="text-caption text-disabled ml-auto"
-          >
-            {{ formatDistanceToNow(log.createdAt,{addSuffix:true}) }}
-          </span>
-        </template>
-
-      </v-tooltip>
-
-
+        <span
+          class="text-caption text-disabled ml-auto"
+        >
+          {{ formatDistanceToNow(log.createdAt, { addSuffix: true }) }}
+        </span>
+      </div>
     </div>
-
-
   </div>
-
-</div>
-
 </template>

@@ -123,6 +123,7 @@ const PAGES = [
   { name: "adminUsers", path: "/admin/users", expect: ["Users", "Ada", "Hopper"] },
   { name: "adminCreateUser", path: "/admin/users/new", expect: ["Create User"] },
   { name: "adminEditUser", path: "/admin/users/1", expect: ["Edit User", "Ada"] },
+  { name: "adminSystemLogs", path: "/admin/systemlogs", expect: ["System Logs"]},
 ];
 
 // "home" has no :id, so StoryBoard has no project to load — in the real app the
