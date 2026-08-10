@@ -31,4 +31,10 @@ export default [
     component: () => import("../views/Admin/AdminEditUser.vue"),
     beforeEnter: isAdmin,
   },
+  {
+    path: "/admin/systemlogs",
+    name: "adminSystemLogs",
+    component: () => import("../views/Admin/AdminSystemLogs.vue"),
+    beforeEnter: isAdmin,
+  },
 ];

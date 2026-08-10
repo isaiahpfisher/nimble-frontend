@@ -45,7 +45,7 @@ async function login() {
 }
 
 function loginWithGithub() {
-  const clientId = "Ov23licf5vFRvrrq96Y8";
+  const clientId = "Ov23lir29YarCqlkrzEP";
   const redirectUri = "http://localhost:8081/auth/github/callback";
   const scope = "user:email";
   window.location.href = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scope}`;

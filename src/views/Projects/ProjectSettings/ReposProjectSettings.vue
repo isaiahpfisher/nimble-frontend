@@ -117,9 +117,41 @@ async function deleteRepository(id) {
 
       <v-card-text>
         <v-alert type="info" variant="tonal" class="mb-4">
-          You can find your repository ID using the GitHub API:
-          <br />
-          <b> https://api.github.com/repos/{owner-username}/{repo-name} </b>
+          <div class="font-weight-bold mb-2">How to find your GitHub Repository ID</div>
+
+          <ol class="pl-5">
+            <li>
+              Open your repository on GitHub.
+            </li>
+            <li>
+              Copy your repository owner/username and repository name.
+              <br />
+              Example: <b>octocat</b> and <b>hello-world</b>
+            </li>
+            <li>
+              Open the following URL in your browser:
+              <br />
+              <code>https://api.github.com/repos/{owner-username}/{repo-name}</code>
+            </li>
+            <li>
+              Find the <b>"id"</b> field in the JSON response.
+              <br />
+              Example: <code>"id": 123456789</code>
+            </li>
+            <li>
+              Enter that number in the <b>GitHub Repository ID</b> field below.
+            </li>
+          </ol>
+
+          <div class="mt-3">
+            <b>Example:</b>
+            <br />
+            For
+            <code>https://api.github.com/repos/octocat/hello-world</code>,
+            look for:
+            <br />
+            <code>"id": 123456789</code>
+          </div>
         </v-alert>
         <v-text-field
           v-model="githubId"

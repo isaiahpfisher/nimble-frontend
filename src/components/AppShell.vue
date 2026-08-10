@@ -124,6 +124,7 @@ const userItems = ref([
 const adminItems = ref([
   { title: "Projects", icon: "mdi-cube-outline", name: "adminProjects" },
   { title: "Users", icon: "mdi-account-group", name: "adminUsers" },
+  { title: "System Logs", icon: "mdi-history", name: "adminSystemLogs" },
 ]);
 </script>
 
