@@ -26,8 +26,7 @@ vi.mock("vue-chartjs", () => {
 
 // One mock covers the whole app: every service module wraps this client.
 vi.mock("../services/services.js", () => {
-  const respond = (method) => (url) =>
-    Promise.resolve({ data: fixtureFor(method, url) });
+  const respond = (method) => (url) => Promise.resolve({ data: fixtureFor(method, url) });
 
   return {
     default: {
@@ -54,12 +53,7 @@ function withoutGuards(routes) {
   }));
 }
 
-const ROUTES = withoutGuards([
-  ...authRoutes,
-  ...projectRoutes,
-  ...storyRoutes,
-  ...adminRoutes,
-]);
+const ROUTES = withoutGuards([...authRoutes, ...projectRoutes, ...storyRoutes, ...adminRoutes]);
 
 // depth picks which component in a nested match to mount: the default is the
 // leaf (the page itself), 0 is the layout wrapper around it.
@@ -72,23 +66,51 @@ const PAGES = [
   },
 
   { name: "createProject", path: "/projects/new", expect: ["Create Project", "Title", "Deadline"] },
-  { name: "projectBoard", path: "/projects/1", expect: ["Test Project", "Story Board"] },
+  { name: "projectBoard", path: "/projects/1", expect: ["Test Project", "Storyboard"] },
   { name: "projectBacklog", path: "/projects/1/backlog", expect: ["Test Project", "Backlog"] },
   { name: "projectSprints", path: "/projects/1/sprints", expect: ["Test Project", "Sprints", "Sprint 1"] },
 
-  { name: "sprintNav", path: "/projects/1/sprints/2", depth: 0, expect: ["Sprint 2", "Board", "Plan", "Retro", "Burndown"] },
+  {
+    name: "sprintNav",
+    path: "/projects/1/sprints/2",
+    depth: 0,
+    expect: ["Sprint 2", "Board", "Plan", "Retro", "Burndown"],
+  },
   { name: "sprintBoard", path: "/projects/1/sprints/2", expect: ["Board"] },
-  { name: "sprintPlan", path: "/projects/1/sprints/2/plan", expect: ["Plan"] },
+  {
+    name: "sprintPlan",
+    path: "/projects/1/sprints/2/plan",
+    // Both columns are checked: the backlog story comes from the backlog
+    // endpoint, the sprint story off the sprint itself.
+    expect: ["Backlog", "Sprint 2", "High priority backlog story", "Test story title"],
+  },
   { name: "sprintRetro", path: "/projects/1/sprints/2/retro", expect: ["Retro"] },
   // The burndown chart is stubbed out (no canvas in jsdom), so there is no text
   // to match — reaching the stub at all means the data pipeline ran.
   { name: "sprintBurndown", path: "/projects/1/sprints/2/burndown", expect: [], stub: "chart" },
 
-  { name: "projectSettingsNav", path: "/projects/1/settings", depth: 0, expect: ["General", "Board Columns", "Story Types", "Repositories", "Members"] },
+  {
+    name: "projectSettingsNav",
+    path: "/projects/1/settings",
+    depth: 0,
+    expect: ["General", "Board Columns", "Story Types", "Repositories", "Members"],
+  },
   { name: "generalProjectSettings", path: "/projects/1/settings", expect: ["General Settings"] },
-  { name: "boardColumnsProjectSettings", path: "/projects/1/settings/board-columns", expect: ["Story States", "To Do", "In Progress"] },
-  { name: "storyTypesProjectSettings", path: "/projects/1/settings/story-types", expect: ["Story Types", "Feature", "Bug"] },
-  { name: "reposProjectSettings", path: "/projects/1/settings/repos", expect: ["Test Project", "Connect Repository", "acme/nimble"] },
+  {
+    name: "boardColumnsProjectSettings",
+    path: "/projects/1/settings/board-columns",
+    expect: ["Story States", "To Do", "In Progress"],
+  },
+  {
+    name: "storyTypesProjectSettings",
+    path: "/projects/1/settings/story-types",
+    expect: ["Story Types", "Feature", "Bug"],
+  },
+  {
+    name: "reposProjectSettings",
+    path: "/projects/1/settings/repos",
+    expect: ["Test Project", "Connect Repository", "acme/nimble"],
+  },
   { name: "membersProjectSettings", path: "/projects/1/settings/members", expect: ["Team Members", "Project Members"] },
   { name: "addMember", path: "/projects/1/settings/addMember", expect: ["Users"] },
 
