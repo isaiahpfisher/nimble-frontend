@@ -60,16 +60,13 @@ async function createRepository() {
     };
 
     if (isEditing.value) {
-      await RepositoryServices.update(
-        editingRepositoryId.value,
-        repository
-      );
+      await RepositoryServices.update(editingRepositoryId.value, repository);
 
-      snackbar.value.show("Repository updated successfully.","green");
+      snackbar.value.show("Repository updated successfully.", "green");
     } else {
       await RepositoryServices.create(projectId.value, repository);
 
-      snackbar.value.show("Repository connected successfully.","green");
+      snackbar.value.show("Repository connected successfully.", "green");
     }
 
     githubId.value = "";
@@ -101,13 +98,12 @@ async function deleteRepository(id) {
 
     await getRepositories(projectId.value);
 
-    snackbar.value.show("Repository deleted successfully.","green");
+    snackbar.value.show("Repository deleted successfully.", "green");
   } catch (error) {
     console.error(error);
     snackbar.value.show(error.response?.data?.message ?? error.message);
   }
 }
-
 </script>
 
 <template>
@@ -115,13 +111,16 @@ async function deleteRepository(id) {
     <v-skeleton-loader color="secondary" type="card"></v-skeleton-loader>
   </v-container>
   <v-container v-else>
-    <h4 class="pl-0 text-h5 mb-6 font-weight-medium">
-      {{ project.title }} Project Settings - Repositories
-    </h4>
+    <h4 class="pl-0 text-h5 mb-6 font-weight-medium">{{ project.title }} Project Settings - Repositories</h4>
     <v-card class="mb-4">
       <v-card-title>Connect Repository</v-card-title>
 
       <v-card-text>
+        <v-alert type="info" variant="tonal" class="mb-4">
+          You can find your repository ID using the GitHub API:
+          <br />
+          <b> https://api.github.com/repos/{owner-username}/{repo-name} </b>
+        </v-alert>
         <v-text-field
           v-model="githubId"
           label="GitHub Repository ID"
@@ -146,58 +145,30 @@ async function deleteRepository(id) {
           label="Owner"
         ></v-text-field>
 
-        <v-btn
-          color="primary"
-          @click="createRepository"
-        >
-          Connect Repository
-        </v-btn>
+        <v-btn color="primary" @click="createRepository"> Connect Repository </v-btn>
       </v-card-text>
     </v-card>
     <v-card class="mt-4">
       <v-card-title>Connected Repositories</v-card-title>
 
       <v-list v-if="repositories.length">
-        <v-list-item
-          v-for="repository in repositories"
-          :key="repository.id"
-        >
+        <v-list-item v-for="repository in repositories" :key="repository.id">
           <v-list-item-title>
             {{ repository.name }}
           </v-list-item-title>
 
-          <v-list-item-subtitle>
-            GitHub ID: {{ repository.githubId }}
-          </v-list-item-subtitle>
+          <v-list-item-subtitle> GitHub ID: {{ repository.githubId }} </v-list-item-subtitle>
 
           <template v-slot:append>
-              <v-btn
-                size="small"
-                color="primary"
-                class="mr-2"
-                @click="editRepository(repository)"
-              >
-                Edit
-              </v-btn>
+            <v-btn size="small" color="primary" class="mr-2" @click="editRepository(repository)"> Edit </v-btn>
 
-              <v-btn
-                size="small"
-                color="error"
-                @click="deleteRepository(repository.id)"
-              >
-                Delete
-              </v-btn>
+            <v-btn size="small" color="error" @click="deleteRepository(repository.id)"> Delete </v-btn>
           </template>
         </v-list-item>
       </v-list>
 
-      <v-card-text v-else>
-        No repositories connected to this project.
-      </v-card-text>
+      <v-card-text v-else> No repositories connected to this project. </v-card-text>
     </v-card>
-
-    
-
   </v-container>
 
   <SnackBar ref="snackbar" />

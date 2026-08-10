@@ -23,6 +23,7 @@
     "jspdf": "^2.5.1",
     "jspdf-autotable": "^3.8.2",
     "octokit": "^5.0.5",
+    "marked": "^18.0.7",
     "quill-magic-url": "^4.2.0",
     "quill-markdown-shortcuts": "^0.0.10",
     "quill-mention": "^6.1.1",
@@ -32,7 +33,6 @@
     "vue-router": "^4.1.6",
     "vuedraggable": "^4.1.0",
     "vuetify": "^3.2.3",
-    "vuex": "^4.0.2",
     "webfontloader": "^1.6.28"
   },
   "devDependencies": {

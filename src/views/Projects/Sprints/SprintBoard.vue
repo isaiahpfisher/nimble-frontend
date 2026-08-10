@@ -34,7 +34,7 @@ async function getSprint(id) {
     <v-skeleton-loader color="secondary" type="card"></v-skeleton-loader>
   </v-container>
   <v-container v-else>
-    Board - can we just reuse the story board component, but hardcode the sprint to this one?
+    Board - can we just reuse the storyboard component, but hardcode the sprint to this one?
   </v-container>
 
   <SnackBar ref="snackbar" />

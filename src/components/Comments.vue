@@ -196,7 +196,7 @@ async function deleteComment(commentId) {
             </span>
             <v-spacer></v-spacer>
             <v-btn
-              v-if="comment.user.id === user.id"
+              v-if="comment.user.id === user.id || user.isAdmin"
               icon="mdi-close"
               size="x-small"
               variant="text"

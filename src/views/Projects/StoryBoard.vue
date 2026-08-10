@@ -36,9 +36,6 @@ const mergedBranchIds = ref(null);
 const mainReference = ref(null);
 var selectedSprint = ref(null);
 
-
-
-
 onMounted(async () => {
   user.value = JSON.parse(localStorage.getItem("user"));
   getProject(projectId.value);
@@ -75,7 +72,6 @@ async function getStories(id) {
   try {
     const response = await StoryServices.getStoriesForProject(id);
     stories.value = response.data;
-    console.log(stories.value);
   } catch (error) {
     console.error(error);
     snackbar.value.show(error.response?.data?.message ?? error.message);
@@ -87,7 +83,7 @@ async function getSprints(id) {
   try {
     const response = await SprintServices.getSprintsForProject(id);
     sprints.value = response.data;
-    selectedSprint = sprints.value[0];
+    selectedSprint.value = (response.data ?? []).find((s) => s.status == "Active").id;
   } catch (error) {
     console.error(error);
     snackbar.value.show(error.response?.data?.message ?? error.message);
@@ -115,9 +111,7 @@ async function getRepositories(id) {
 
 
 
-
 async function handleDrop(event, stateId) {
-  console.log(event);
   if (!event.added) return;
   var story = event.added.element;
   story.stateId = stateId;
@@ -358,78 +352,56 @@ console.log(token);
 
 
 <template>
-  <v-container v-if="!project||!stories||!sprints">
+  <v-container v-if="!project || !stories || !sprints">
     <v-skeleton-loader color="secondary" type="card"></v-skeleton-loader>
   </v-container>
   <v-container v-else>
-    <h4 class="pl-0 text-h5 font-weight-medium">
-      {{ project.title }} - Story Board
-    </h4>
+    <h4 class="pl-0 text-h5 font-weight-medium">{{ project.title }} - Storyboard</h4>
     <label>Choose a Sprint:</label>
-    <v-select id="sprintselect"
-    :items="sprints"
-    :key="id">
-    </v-select>
-    <v-btn variant="flat" color="primary" @click="selectSprint()">
-      Select Sprint
-    </v-btn>
-    <space></space>
-<v-row>
-  <v-col
-  v-for="(storyState, i) in storyStates"
-  :key="i"
-  >
-    <v-card class="rounded" elevation-5>
-        <v-card-title class="text-h6">{{ storyState.name }}</v-card-title>
-            <draggable
-              item-key="id"
-              :list="stories.filter(element=>element.stateId == storyState.id && element.sprintId == selectedSprint)"
-              group="stories"
-              animation="200"
-              @change="event=>handleDrop(event, storyState.id)"
-            ><template #item="{element, index}">
-                <v-list-item
-                  :key="element.id"
-                  class="cursor-grab"
-                  :class="{
-                    'border-b': index < storyStates.length - 1
-                  }"
-                >
-                  <template v-slot:prepend>
-                    <v-icon class="text-medium-emphasis" icon="mdi-drag"></v-icon>
+    <v-select
+      id="sprintselect"
+      class="mb-4"
+      :items="sprints"
+      item-title="title"
+      item-value="id"
+      v-model="selectedSprint"
+    ></v-select>
+    <v-row>
+      <v-col v-for="(storyState, i) in storyStates" :key="i">
+        <v-card class="rounded" elevation-5>
+          <v-card-title class="text-h6">{{ storyState.name }}</v-card-title>
+          <draggable
+            item-key="id"
+            :list="stories.filter((element) => element.stateId == storyState.id && element.sprintId == selectedSprint)"
+            group="stories"
+            animation="200"
+            @change="(event) => handleDrop(event, storyState.id)"
+            ><template #item="{ element, index }">
+              <v-list-item
+                :key="element.id"
+                :to="{
+                  name: 'editStory',
+                  params: { projectId: projectId, storyId: element.id },
+                }"
+              >
+                <template v-slot:prepend>
+                  <v-icon class="text-medium-emphasis" icon="mdi-drag"></v-icon>
+                </template>
+
+                <v-tooltip text="Tooltip">
+                  <template v-slot:activator="{ props }">
+                    {{ element.title }}
                   </template>
-
-
-
-
-                  <v-tooltip text="Tooltip">
-                    <template v-slot:activator="{ props }">
-                      {{ element.title }}
-                  </template>
-                  </v-tooltip>
-
-
-                  <template v-slot:append>
-                    <v-btn
-                      icon="mdi-pencil"
-                      variant="tonal"
-                      size="small"
-                      @click="editStory(element.id)"
-                    ></v-btn>
-                  </template>
-                </v-list-item>
-              </template>
-            </draggable>
-     </v-card>
-  </v-col>
-  </v-row>
-    </v-container>
+                </v-tooltip>
+              </v-list-item>
+            </template>
+          </draggable>
+        </v-card>
+      </v-col>
+    </v-row>
+  </v-container>
 
 
   <SnackBar ref="snackbar" />
 </template>
-
-
-
-
 
