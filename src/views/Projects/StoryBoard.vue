@@ -31,6 +31,8 @@ const repositories = ref(null);
 const repoTokens = ref(null);
 const octokit = ref(null);
 const branches = ref(null);
+const mergedBranches = ref(null);
+const mergedBranchIds = ref(null);
 const mainReference = ref(null);
 var selectedSprint = ref(null);
 
@@ -169,6 +171,7 @@ console.log(token);
     });
     pullRequests.value = response.data;
     checkPullRequestPositions();
+    getMerged(token, repository, owner);
   } catch (error) {
     console.error(error);
     snackbar.value.show(error.response?.data?.message ?? error.message);
@@ -218,7 +221,7 @@ function checkPullRequestPositions() {
 function checkBranchPositions(token, repository, owner){
 //positions for creating stories
   for(var j=0; j < stories.value.length; j++){
-    if(stories.value[j].stateId == project.value.branchCreationStateId){
+    if(stories.value[j].stateId != project.value.completedStateId && stories.value[j].stateId == project.value.branchCreationStateId && branches.value.length > 0){
       var isMatch = false;
       for(var i = 0; i < branches.value.length; i++){
         if((branches.value.length>0)&&(stories.value.length>0)&&(branches.value[i].name != 'main')){
@@ -297,8 +300,58 @@ var newName = name;
     console.error(error);
     snackbar.value.show(error.response?.data?.message ?? error.message);
   }
+}
 
-
+async function getMerged(token, repository, owner) {
+  const octokit = new Octokit({
+  auth: token
+})
+console.log(token);
+  try {
+    const response = await octokit.request('GET /search/issues/', {
+      headers: {
+        'X-GitHub-Api-Version': '2026-03-10'
+      },
+      q: 'repo:'+owner+'/'+repository+'\+is:pr\+is:merged',
+      
+    });
+    mergedBranches.value = response.data;
+    if(mergedBranches.value.items.length > 0){
+      for(var i = 0; i < mergedBranches.value.items.length; i++){
+        console.log(mergedBranches.value.items[i].pull_request.html_url.split("/")[6]);
+        console.log(mergedBranches.value.items[i].pull_request);
+        var my_pull_number = mergedBranches.value.items[i].pull_request.html_url.split("/")[6];
+        try {
+          const response = await octokit.request('GET /repos/'+owner+'/'+repository+'/pulls/'+my_pull_number, {
+            owner: owner,
+            repo: repository,
+            pull_number: my_pull_number,
+            headers: {
+              'X-GitHub-Api-Version': '2026-03-10'
+            },
+          });
+          console.log("response.data");
+          console.log(response.data.head.ref);
+          for(var j = 0; j < stories.value.length; j++){
+            if(stories.value[j].title == response.data.head.ref){
+              console.log("we have a match, move the story")
+              if(project.value.completedStateId){
+                stories.value[j].stateId = project.value.completedStateId;
+                updateStory(stories.value[j].id, stories.value[j]);
+              }
+            }
+          }
+          
+        } catch (error) {
+          console.error(error);
+          snackbar.value.show(error.response?.data?.message ?? error.message);
+        }
+      }
+    }
+  } catch (error) {
+    console.error(error);
+    snackbar.value.show(error.response?.data?.message ?? error.message);
+  }
 }
 
 </script>
