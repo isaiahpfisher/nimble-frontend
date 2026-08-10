@@ -75,6 +75,7 @@ async function createRepository() {
     githubId.value = "";
     githubToken.value = "";
     repositoryName.value = "";
+    owner.value = "";
     editingRepositoryId.value = null;
     isEditing.value = false;
 
@@ -90,6 +91,7 @@ function editRepository(repository) {
   githubId.value = repository.githubId;
   githubToken.value = repository.githubToken;
   repositoryName.value = repository.name;
+  owner.value = repository.owner
   isEditing.value = true;
 }
 

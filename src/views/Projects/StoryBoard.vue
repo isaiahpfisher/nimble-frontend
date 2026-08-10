@@ -103,7 +103,7 @@ async function getRepositories(id) {
         if(!(repositories.value[i].owner == null)&&!(repositories.value[i].githubToken == null)){
         console.log(repositories.value[i].githubToken+" "+ repositories.value[i].name +" "+repositories.value[i].owner+" "+repositories.value.length);
          getPullRequests(repositories.value[i].githubToken, repositories.value[i].name, repositories.value[i].owner);
-         getBranches(repositories.value[i].githubToken, repositories.value[i].name, repositories.value[i].owner);
+         getBranches(repositories.value[i]);
         }
       }
     }
@@ -178,22 +178,21 @@ console.log(token);
   }
 }//Test-Repository-For-Nimble
 
-async function getBranches(token, repository, owner) {
+async function getBranches(repo) {
   const octokit = new Octokit({
-  auth: token
+  auth: repo.githubToken
 })
-console.log(token);
   try {
-    const response = await octokit.request('GET /repos/'+owner+'/'+repository+'/branches', {
-      owner: owner,
-      repo: repository,
+    const response = await octokit.request('GET /repos/'+repo.owner+'/'+repo.name+'/branches', {
+      owner: repo.owner,
+      repo: repo.name,
       headers: {
         'X-GitHub-Api-Version': '2026-03-10'
       }
     });
     branches.value = response.data;
     console.log(branches.value);
-    checkBranchPositions(token, repository, owner);
+    checkBranchPositions(repo, response.data);
   } catch (error) {
     console.error(error);
     snackbar.value.show(error.response?.data?.message ?? error.message);
@@ -207,7 +206,7 @@ function checkPullRequestPositions() {
   for(var i = 0; i < pullRequests.value.length; i++){
     for(var j=0; j < stories.value.length; j++){
       if((pullRequests.value.length>0)&&(stories.value.length>0)){
-        if(pullRequests.value[i].head.ref == stories.value[j].title){
+        if(pullRequests.value[i].head.ref == stories.value[j].title.split(" ").join("_")){
           if(!(project.value.prReviewStateId == null)){
             console.log(stories.value[j].stateId = project.value.prReviewStateId);
             updateStory(stories.value[j].id, stories.value[j]);
@@ -218,28 +217,29 @@ function checkPullRequestPositions() {
   }
 }
 
-function checkBranchPositions(token, repository, owner){
+function checkBranchPositions(repo, repoBranches){
 //positions for creating stories
   for(var j=0; j < stories.value.length; j++){
-    if(stories.value[j].stateId != project.value.completedStateId && stories.value[j].stateId == project.value.branchCreationStateId && branches.value.length > 0){
+    var story = stories.value[j];
+
+    //only touch stories that are labeled for this repository
+    if(story.repositoryId != repo.id){
+      continue;
+    }
+
+    if(story.stateId != project.value.completedStateId && story.stateId == project.value.branchCreationStateId && repoBranches.length > 0){
       var isMatch = false;
-      for(var i = 0; i < branches.value.length; i++){
-        if((branches.value.length>0)&&(stories.value.length>0)&&(branches.value[i].name != 'main')){
-          if(branches.value[i].name == stories.value[j].title){
+      for(var i = 0; i < repoBranches.length; i++){
+        if(repoBranches[i].name != 'main'){
+          if(repoBranches[i].name == story.title.split(" ").join("_")){
             isMatch = true;
           }
-          console.log(branches.value[i].name +" "+stories.value[j].title)
+          console.log(repoBranches[i].name +" "+story.title)
         }
       }
       if(isMatch == false){
-        //check what repository is labled for the story before running the create branch
-        
-        for(var x = 0; x < repositories.value.length; x++){
-          if((stories.value[j].repositoryId == repositories.value[x].id)&&(repositories.value.length > 0)){
-            console.log("make a new story with the name: "+stories.value[j].title+" and heres the extras "+token+repository+owner)
-            createBranch(token, repository, owner, stories.value[j].title);
-          }
-        }
+        console.log("make a new branch with the name: "+story.title+" in "+repo.owner+"/"+repo.name)
+        createBranch(repo.githubToken, repo.name, repo.owner, story.title);
       }
     }
   }
@@ -262,8 +262,8 @@ async function createBranch(token, repository, owner, name) {
   const octokit = new Octokit({
   auth: token
 })
-var newName = name;
-//var newName = name.split(" ").join("_");
+// var newName = name;
+var newName = name.split(" ").join("_");
 
 //i dont like that its a try catch in a try catch
   try {
@@ -333,7 +333,7 @@ console.log(token);
           console.log("response.data");
           console.log(response.data.head.ref);
           for(var j = 0; j < stories.value.length; j++){
-            if(stories.value[j].title == response.data.head.ref){
+            if(stories.value[j].title.split(" ").join("_") == response.data.head.ref){
               console.log("we have a match, move the story")
               if(project.value.completedStateId){
                 stories.value[j].stateId = project.value.completedStateId;
