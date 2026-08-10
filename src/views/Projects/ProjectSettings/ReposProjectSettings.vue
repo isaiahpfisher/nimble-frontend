@@ -14,6 +14,8 @@ const project = ref(null);
 const snackbar = ref(null);
 const repositories = ref([]);
 const githubId = ref("");
+const githubToken = ref("");
+const owner = ref("");
 const repositoryName = ref("");
 const editingRepositoryId = ref(null);
 const isEditing = ref(false);
@@ -53,6 +55,8 @@ async function createRepository() {
     const repository = {
       githubId: githubId.value,
       name: repositoryName.value,
+      githubToken: githubToken.value,
+      owner: owner.value,
     };
 
     if (isEditing.value) {
@@ -66,7 +70,9 @@ async function createRepository() {
     }
 
     githubId.value = "";
+    githubToken.value = "";
     repositoryName.value = "";
+    owner.value = "";
     editingRepositoryId.value = null;
     isEditing.value = false;
 
@@ -80,7 +86,9 @@ async function createRepository() {
 function editRepository(repository) {
   editingRepositoryId.value = repository.id;
   githubId.value = repository.githubId;
+  githubToken.value = repository.githubToken;
   repositoryName.value = repository.name;
+  owner.value = repository.owner
   isEditing.value = true;
 }
 
@@ -121,7 +129,21 @@ async function deleteRepository(id) {
           required
         ></v-text-field>
 
-        <v-text-field v-model="repositoryName" label="Repository Name" required></v-text-field>
+        <v-text-field
+          v-model="repositoryName"
+          label="Repository Name"
+          required
+        ></v-text-field>
+
+        <v-text-field
+          v-model="githubToken"
+          label="Github Token"
+        ></v-text-field>
+
+        <v-text-field
+          v-model="owner"
+          label="Owner"
+        ></v-text-field>
 
         <v-btn color="primary" @click="createRepository"> Connect Repository </v-btn>
       </v-card-text>
